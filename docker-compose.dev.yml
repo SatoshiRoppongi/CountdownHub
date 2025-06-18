@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:15
+    container_name: countdown-hub-db
+    environment:
+      POSTGRES_USER: countdown_user
+      POSTGRES_PASSWORD: countdown_pass
+      POSTGRES_DB: countdown_hub
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

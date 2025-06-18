@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id             Int       @id @default(autoincrement())
+  title          String    @db.VarChar(255)
+  description    String?   @db.Text
+  start_datetime DateTime  @db.Timestamptz(6)
+  end_datetime   DateTime? @db.Timestamptz(6)
+  location       String?   @db.VarChar(255)
+  venue_type     VenueType?
+  site_url       String?   @db.VarChar(500)
+  image_url      String?   @db.VarChar(500)
+  tags           String[]
+  is_active      Boolean   @default(true)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  comments Comment[]
+
+  @@map("events")
+  @@index([start_datetime])
+  @@index([is_active])
+  @@index([tags])
+}
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+  event_id    Int
+  author_name String   @db.VarChar(100)
+  content     String   @db.Text
+  is_reported Boolean  @default(false)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+  @@index([event_id])
+  @@index([is_reported])
+}
+
+enum VenueType {
+  online
+  offline
+  hybrid
+}
