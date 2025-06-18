@@ -98,15 +98,29 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
+    // データクリーニング
+    const eventData = {
+      ...req.body,
+      venue_type: req.body.venue_type === '' ? null : req.body.venue_type,
+      site_url: req.body.site_url === '' ? null : req.body.site_url,
+      image_url: req.body.image_url === '' ? null : req.body.image_url,
+      location: req.body.location === '' ? null : req.body.location,
+      description: req.body.description === '' ? null : req.body.description,
+    };
+
+    console.log('Creating event with data:', eventData);
+
     const event = await prisma.event.create({
-      data: req.body
+      data: eventData
     });
 
     res.status(201).json(event);
   } catch (error) {
+    console.error('Database error:', error);
     next(error);
   }
 };
