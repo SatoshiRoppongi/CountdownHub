@@ -10,6 +10,15 @@ const api = axios.create({
   },
 });
 
+// 認証ヘッダーの自動送信
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const eventAPI = {
   getEvents: async (params: EventFilters & { page?: number; limit?: number } = {}): Promise<EventsResponse> => {
     const response = await api.get('/events', { params });

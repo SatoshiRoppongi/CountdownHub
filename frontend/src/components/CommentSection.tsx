@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventAPI } from '../services/api';
 import { Comment } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 interface CommentSectionProps {
   eventId: number;
@@ -19,6 +20,7 @@ interface CommentResponse {
 }
 
 export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
+  const { user, isAuthenticated } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<CommentFormData>({
     author_name: '',
@@ -33,6 +35,16 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
   const commentsPerPage = 10;
 
   const queryClient = useQueryClient();
+
+  // 認証ユーザーの表示名を自動設定
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        author_name: user.display_name || user.username || ''
+      }));
+    }
+  }, [user]);
 
   // コメント一覧取得（リアルタイム更新対応）
   const { data: commentData, isLoading, error } = useQuery({
@@ -196,12 +208,18 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
               {isRealTimeEnabled ? '停止' : '開始'}
             </button>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
-          >
-            {showForm ? 'キャンセル' : 'コメントを投稿'}
-          </button>
+          {isAuthenticated ? (
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+            >
+              {showForm ? 'キャンセル' : 'コメントを投稿'}
+            </button>
+          ) : (
+            <div className="text-sm text-gray-600">
+              コメントを投稿するには<span className="text-blue-600 font-medium">ログイン</span>が必要です
+            </div>
+          )}
         </div>
       </div>
 
@@ -235,7 +253,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
       )}
 
       {/* コメント投稿フォーム */}
-      {showForm && (
+      {showForm && isAuthenticated && (
         <form onSubmit={handleSubmit} className="mb-8 p-4 bg-gray-50 rounded-lg">
           <div className="mb-4">
             <label htmlFor="author_name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -316,7 +334,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
                       通報済み
                     </span>
                   )}
-                  {!comment.is_reported && (
+                  {!comment.is_reported && isAuthenticated && user && comment.user_id === user.id && (
                     <div className="flex space-x-1">
                       <button
                         onClick={() => handleEditStart(comment)}

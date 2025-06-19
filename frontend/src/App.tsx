@@ -10,6 +10,7 @@ import { EventRegistrationPage } from './pages/EventRegistrationPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AuthPage } from './pages/AuthPage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
+import { PrivateRoute } from './components/PrivateRoute';
 
 function AppContent() {
   const location = useLocation();
@@ -52,8 +53,8 @@ function AppContent() {
             } 
           />
           <Route path="/events/:id" element={<EventDetailPage />} />
-          <Route path="/register" element={<EventRegistrationPage />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/register" element={<PrivateRoute><EventRegistrationPage /></PrivateRoute>} />
+          <Route path="/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
         </Routes>

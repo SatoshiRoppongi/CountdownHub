@@ -12,6 +12,7 @@ export interface Event {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  user_id: string | null;
   _count: {
     comments: number;
     favorites?: number;
@@ -27,6 +28,7 @@ export interface Comment {
   is_reported: boolean;
   created_at: string;
   updated_at: string;
+  user_id: string | null;
 }
 
 export interface EventsResponse {
@@ -55,4 +57,18 @@ export interface AdminStats {
   events: number;
   comments: number;
   reportedComments: number;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  username: string;
+  display_name: string;
+  avatar_url?: string;
+  created_at: string;
+  auth_provider?: string;
+  google_id?: string;
+  github_id?: string;
+  twitter_id?: string;
+  line_id?: string;
 }

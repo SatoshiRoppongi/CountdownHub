@@ -6,11 +6,14 @@ import { CommentSection } from '../components/CommentSection';
 import { StickyCountdownHeader } from '../components/StickyCountdownHeader';
 import { FullscreenCountdownOverlay } from '../components/FullscreenCountdownOverlay';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
+import { eventAPI } from '../services/api';
 
 export const EventDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const eventId = parseInt(id || '0', 10);
-  const { showEventStarted } = useToast();
+  const { showEventStarted, showSuccess, showError } = useToast();
+  const { user } = useAuth();
   const navigate = useNavigate();
   
   const { data: event, isLoading, error } = useEvent(eventId);
@@ -25,6 +28,27 @@ export const EventDetailPage: React.FC = () => {
     // タグクリック時に検索ページに遷移
     navigate(`/?search=${encodeURIComponent(tag)}`);
   };
+
+  const handleEditEvent = () => {
+    navigate(`/register?edit=${eventId}`);
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!window.confirm('このイベントを削除しますか？この操作は取り消せません。')) {
+      return;
+    }
+
+    try {
+      await eventAPI.deleteEvent(eventId);
+      showSuccess('イベントを削除しました');
+      navigate('/');
+    } catch (error) {
+      showError('イベントの削除に失敗しました');
+    }
+  };
+
+  // 現在のユーザーがこのイベントの作成者かチェック
+  const isOwner = user && event && event.user_id === user.id;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -142,9 +166,29 @@ export const EventDetailPage: React.FC = () => {
 
         {/* イベント情報 */}
         <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-            {event.title}
-          </h1>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-0">
+              {event.title}
+            </h1>
+            
+            {/* 編集・削除ボタン（所有者のみ表示） */}
+            {isOwner && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleEditEvent}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  ✏️ 編集
+                </button>
+                <button
+                  onClick={handleDeleteEvent}
+                  className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  🗑️ 削除
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* 基本情報 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

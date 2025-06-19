@@ -6,6 +6,8 @@ interface ToastContextType {
   removeToast: (id: string) => void;
   showEventStarted: (eventTitle: string) => void;
   showToast: (toast: Omit<ToastMessage, 'id'>) => void;
+  showSuccess: (message: string) => void;
+  showError: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -49,11 +51,31 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     addToast(toast);
   }, [addToast]);
 
+  const showSuccess = useCallback((message: string) => {
+    addToast({
+      type: 'success',
+      title: '成功',
+      message,
+      duration: 4000,
+    });
+  }, [addToast]);
+
+  const showError = useCallback((message: string) => {
+    addToast({
+      type: 'error',
+      title: 'エラー',
+      message,
+      duration: 6000,
+    });
+  }, [addToast]);
+
   const contextValue: ToastContextType = {
     addToast,
     removeToast,
     showEventStarted,
     showToast,
+    showSuccess,
+    showError,
   };
 
   return (
