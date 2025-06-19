@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { NotificationBell } from './NotificationBell';
 
 interface HeaderProps {
   searchQuery?: string;
@@ -98,6 +99,9 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   + イベント登録
                 </Link>
+                
+                {/* 通知ベル */}
+                <NotificationBell />
                 
                 {/* ユーザーメニュー */}
                 <div className="relative">

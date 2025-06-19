@@ -18,6 +18,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: countdown-hub-backend
+    env_file:
+      - ./backend/.env
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://countdown_user:countdown_pass@db:5432/countdown_hub
@@ -38,6 +40,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: countdown-hub-frontend
+    env_file:
+      - ./frontend/.env
     environment:
       NODE_ENV: development
       REACT_APP_API_URL: http://localhost:3001

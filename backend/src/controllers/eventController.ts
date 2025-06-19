@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
 import { PrismaClient } from '@prisma/client';
 import { createError } from '../middleware/errorHandler';
+import { NotificationService } from '../services/notificationService';
 
 const prisma = new PrismaClient();
 
@@ -161,6 +162,12 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
       }
     });
 
+    // Create notification for event update
+    const updatedFields = Object.keys(req.body).filter(key => key !== 'updated_at');
+    if (updatedFields.length > 0) {
+      await NotificationService.createEventUpdatedNotification(Number(id), updatedFields);
+    }
+
     res.json(event);
   } catch (error) {
     next(error);
@@ -191,6 +198,9 @@ export const deleteEvent = async (req: Request, res: Response, next: NextFunctio
       where: { id: Number(id) },
       data: { is_active: false }
     });
+
+    // Create notification for event cancellation
+    await NotificationService.createEventCancelledNotification(Number(id));
 
     res.status(204).send();
   } catch (error) {
@@ -255,6 +265,15 @@ export const createEventComment = async (req: Request, res: Response, next: Next
         user_id: user?.id || null, // ユーザーIDを追加
       }
     });
+
+    // Create notification for interested users
+    if (user?.id && req.body.author_name) {
+      await NotificationService.createCommentNotification(
+        Number(id),
+        user.id,
+        req.body.author_name
+      );
+    }
 
     res.status(201).json(comment);
   } catch (error) {

@@ -27,9 +27,10 @@ model Event {
   updated_at     DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
   user_id        String?   @db.VarChar(255) // 作成者ユーザーID（既存イベントとの互換性のためnullable）
 
-  comments  Comment[]
-  favorites Favorite[]
-  user      User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  comments      Comment[]
+  favorites     Favorite[]
+  notifications Notification[]
+  user          User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
 
   @@map("events")
   @@index([start_datetime])
@@ -57,9 +58,11 @@ model User {
   
   auth_provider String @default("local") @db.VarChar(50) // local, google, github, twitter, line
 
-  events    Event[]
-  comments  Comment[]
-  favorites Favorite[]
+  events               Event[]
+  comments             Comment[]
+  favorites            Favorite[]
+  notifications        Notification[]
+  notification_settings NotificationSettings?
 
   @@map("users")
   @@index([email])
@@ -103,8 +106,63 @@ model Favorite {
   @@index([user_id])
 }
 
+model Notification {
+  id          Int              @id @default(autoincrement())
+  user_id     String           @db.VarChar(255)
+  type        NotificationType
+  title       String           @db.VarChar(255)
+  message     String           @db.Text
+  read        Boolean          @default(false)
+  action_url  String?          @db.VarChar(500)
+  action_text String?          @db.VarChar(100)
+  event_id    Int?
+  created_at  DateTime         @default(now()) @db.Timestamptz(6)
+  expires_at  DateTime?        @db.Timestamptz(6)
+
+  user  User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  event Event? @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+  @@index([user_id])
+  @@index([type])
+  @@index([read])
+  @@index([created_at])
+  @@index([expires_at])
+}
+
+model NotificationSettings {
+  id                    Int      @id @default(autoincrement())
+  user_id               String   @unique @db.VarChar(255)
+  email_enabled         Boolean  @default(true)
+  browser_enabled       Boolean  @default(true)
+  event_reminders       Boolean  @default(true)
+  comment_notifications Boolean  @default(true)
+  event_updates         Boolean  @default(true)
+  weekly_digest         Boolean  @default(true)
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("notification_settings")
+}
+
 enum VenueType {
   online
   offline
   hybrid
+}
+
+enum NotificationType {
+  event_starting_soon
+  event_started
+  new_comment
+  comment_reply
+  event_updated
+  event_cancelled
+  favorite_event_reminder
+  event_trending
+  weekly_digest
+  system_maintenance
+  feature_announcement
 }

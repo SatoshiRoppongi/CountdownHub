@@ -2,20 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCreateEvent, useEvent, useUpdateEvent } from '../hooks/useEvents';
 import { Event } from '../types';
+import { EnhancedFormField } from '../components/EnhancedFormField';
+import { validateEventForm, validateFieldRealtime, EventFormData as ValidatedEventFormData } from '../utils/eventValidation';
 
-interface EventFormData {
-  title: string;
-  description: string;
-  start_date: string;
-  start_time: string;
-  end_date: string;
-  end_time: string;
-  location: string;
-  venue_type: 'online' | 'offline' | 'hybrid' | '';
-  site_url: string;
-  image_url: string;
-  tags: string;
-}
+// ValidatedEventFormDataを使用
+type EventFormData = ValidatedEventFormData;
 
 export const EventRegistrationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -78,88 +69,11 @@ export const EventRegistrationPage: React.FC = () => {
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    // タイトル検証
-    if (!formData.title.trim()) {
-      newErrors.title = 'イベントタイトルは必須です';
-    } else if (formData.title.trim().length < 3) {
-      newErrors.title = 'タイトルは3文字以上で入力してください';
-    }
-
-    // 開始日付検証
-    if (!formData.start_date) {
-      newErrors.start_date = '開始日は必須です';
-    } else {
-      const startDate = new Date(formData.start_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      if (startDate < today) {
-        newErrors.start_date = '開始日は今日以降の日付を選択してください';
-      }
-    }
-
-    // 終了日時検証（設定されている場合）
-    if (formData.end_date) {
-      const startDatetime = combineDateAndTime(formData.start_date, formData.start_time);
-      const endDatetime = combineDateAndTime(formData.end_date, formData.end_time);
-      
-      if (startDatetime && endDatetime) {
-        const startDate = new Date(startDatetime);
-        const endDate = new Date(endDatetime);
-        
-        if (endDate <= startDate) {
-          newErrors.end_date = '終了日時は開始日時より後に設定してください';
-        }
-      }
-    }
-
-    // URL検証
-    if (formData.site_url && !isValidUrl(formData.site_url)) {
-      newErrors.site_url = '有効なURLを入力してください（https://example.com）';
-    }
-
-    if (formData.image_url && !isValidUrl(formData.image_url)) {
-      newErrors.image_url = '有効な画像URLを入力してください（https://example.com/image.jpg）';
-    }
-
-    // 開催形式と場所の整合性チェック
-    if (formData.venue_type === 'online' && !formData.location.trim()) {
-      newErrors.location = 'オンライン開催の場合、開催場所に「オンライン開催」などを入力してください';
-    }
-
-    if (formData.venue_type === 'offline' && !formData.location.trim()) {
-      newErrors.location = 'オフライン開催の場合、具体的な開催場所を入力してください';
-    }
-
-    // タグ検証
-    if (formData.tags) {
-      const tags = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-      if (tags.length > 10) {
-        newErrors.tags = 'タグは10個以下にしてください';
-      }
-      
-      for (const tag of tags) {
-        if (tag.length > 20) {
-          newErrors.tags = '各タグは20文字以下にしてください';
-          break;
-        }
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const validation = validateEventForm(formData);
+    setErrors(validation.errors);
+    return validation.isValid;
   };
 
-  const isValidUrl = (url: string): boolean => {
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,7 +93,7 @@ export const EventRegistrationPage: React.FC = () => {
       start_datetime: startDatetime,
       end_datetime: endDatetime,
       location: formData.location.trim() || null,
-      venue_type: formData.venue_type || null,
+      venue_type: (formData.venue_type as 'online' | 'offline' | 'hybrid') || null,
       site_url: formData.site_url.trim() || null,
       image_url: formData.image_url.trim() || null,
       tags: formData.tags
@@ -216,12 +130,18 @@ export const EventRegistrationPage: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const newFormData = { ...formData, [name]: value };
+    setFormData(newFormData);
     
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  // リアルタイムバリデーション用ハンドラー
+  const handleFieldValidation = (fieldName: keyof EventFormData, value: string) => {
+    return validateFieldRealtime(fieldName, value, formData);
   };
 
   // 編集モードでデータ読み込み中の場合
@@ -264,43 +184,35 @@ export const EventRegistrationPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* イベントタイトル */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                イベントタイトル *
-              </label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.title ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="イベントのタイトルを入力してください"
-                maxLength={255}
-                required
-              />
-              {errors.title && (
-                <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-              )}
-            </div>
+            <EnhancedFormField
+              label="イベントタイトル"
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+              onValidate={(value) => handleFieldValidation('title', value)}
+              placeholder="イベントのタイトルを入力してください"
+              required
+              error={errors.title}
+              maxLength={100}
+              helperText="3文字以上100文字以内で入力してください"
+              icon="🎉"
+            />
 
             {/* イベント説明 */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                イベント説明
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="イベントの詳細説明を入力してください"
-                rows={4}
-              />
-            </div>
+            <EnhancedFormField
+              label="イベント説明"
+              name="description"
+              type="textarea"
+              value={formData.description}
+              onChange={handleInputChange}
+              onValidate={(value) => handleFieldValidation('description', value)}
+              placeholder="イベントの詳細説明を入力してください（任意）"
+              error={errors.description}
+              maxLength={2000}
+              rows={4}
+              helperText="イベントの内容、対象者、持ち物などを詳しく説明してください"
+              icon="📝"
+            />
 
             {/* 開始日時 */}
             <div className="space-y-4">
@@ -390,113 +302,79 @@ export const EventRegistrationPage: React.FC = () => {
 
             {/* 開催場所と形式 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                  開催場所
-                </label>
-                <input
-                  type="text"
-                  id="location"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.location ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="東京都渋谷区、オンライン開催 など"
-                  maxLength={255}
-                />
-                {errors.location && (
-                  <p className="text-red-500 text-sm mt-1">{errors.location}</p>
-                )}
-              </div>
+              <EnhancedFormField
+                label="開催場所"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
+                onValidate={(value) => handleFieldValidation('location', value)}
+                placeholder="東京都渋谷区、オンライン開催、Zoom など"
+                error={errors.location}
+                maxLength={200}
+                helperText="具体的な住所、オンラインプラットフォーム名など"
+                icon="📍"
+              />
 
-              <div>
-                <label htmlFor="venue_type" className="block text-sm font-medium text-gray-700 mb-2">
-                  開催形式
-                </label>
-                <select
-                  id="venue_type"
-                  name="venue_type"
-                  value={formData.venue_type}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">選択してください</option>
-                  <option value="online">オンライン</option>
-                  <option value="offline">オフライン</option>
-                  <option value="hybrid">ハイブリッド</option>
-                </select>
-              </div>
+              <EnhancedFormField
+                label="開催形式"
+                name="venue_type"
+                type="select"
+                value={formData.venue_type}
+                onChange={handleInputChange}
+                options={[
+                  { value: 'online', label: '🌐 オンライン' },
+                  { value: 'offline', label: '🏢 オフライン' },
+                  { value: 'hybrid', label: '🔄 ハイブリッド' }
+                ]}
+                placeholder="開催形式を選択してください"
+                error={errors.venue_type}
+                helperText="参加者がどのように参加するかを選択してください"
+                icon="🎪"
+              />
             </div>
 
             {/* URL情報 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="site_url" className="block text-sm font-medium text-gray-700 mb-2">
-                  公式サイトURL
-                </label>
-                <input
-                  type="url"
-                  id="site_url"
-                  name="site_url"
-                  value={formData.site_url}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.site_url ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="https://example.com"
-                />
-                {errors.site_url && (
-                  <p className="text-red-500 text-sm mt-1">{errors.site_url}</p>
-                )}
-              </div>
+              <EnhancedFormField
+                label="公式サイトURL"
+                name="site_url"
+                type="url"
+                value={formData.site_url}
+                onChange={handleInputChange}
+                onValidate={(value) => handleFieldValidation('site_url', value)}
+                placeholder="https://example.com"
+                error={errors.site_url}
+                helperText="イベントの詳細情報やチケット購入ページなど"
+                icon="🔗"
+              />
 
-              <div>
-                <label htmlFor="image_url" className="block text-sm font-medium text-gray-700 mb-2">
-                  画像URL
-                </label>
-                <input
-                  type="url"
-                  id="image_url"
-                  name="image_url"
-                  value={formData.image_url}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.image_url ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="https://example.com/image.jpg"
-                />
-                {errors.image_url && (
-                  <p className="text-red-500 text-sm mt-1">{errors.image_url}</p>
-                )}
-              </div>
+              <EnhancedFormField
+                label="画像URL"
+                name="image_url"
+                type="url"
+                value={formData.image_url}
+                onChange={handleInputChange}
+                onValidate={(value) => handleFieldValidation('image_url', value)}
+                placeholder="https://example.com/image.jpg"
+                error={errors.image_url}
+                helperText="イベントのサムネイル画像（任意）"
+                icon="🖼️"
+              />
             </div>
 
             {/* タグ */}
-            <div>
-              <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
-                タグ
-              </label>
-              <input
-                type="text"
-                id="tags"
-                name="tags"
-                value={formData.tags}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.tags ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="React, JavaScript, Frontend（カンマ区切り）"
-              />
-              {errors.tags ? (
-                <p className="text-red-500 text-sm mt-1">{errors.tags}</p>
-              ) : (
-                <p className="text-gray-500 text-sm mt-1">
-                  複数のタグはカンマで区切って入力してください（最大10個、各タグ20文字以下）
-                </p>
-              )}
-            </div>
+            <EnhancedFormField
+              label="タグ"
+              name="tags"
+              value={formData.tags}
+              onChange={handleInputChange}
+              onValidate={(value) => handleFieldValidation('tags', value)}
+              placeholder="React, JavaScript, Frontend（カンマ区切り）"
+              error={errors.tags}
+              maxLength={250}
+              helperText="複数のタグはカンマで区切って入力してください（最大10個、各タグ20文字以下）"
+              icon="🏷️"
+            />
 
             {/* 送信エラーメッセージ */}
             {errors.submit && (

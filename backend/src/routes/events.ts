@@ -11,7 +11,7 @@ import {
   updateEventComment,
   deleteEventComment
 } from '../controllers/eventController';
-import { optionalAuth, developmentMode } from '../middleware/auth';
+import { optionalAuth, authenticateToken, developmentMode } from '../middleware/auth';
 
 const router = Router();
 
@@ -19,7 +19,7 @@ router.get('/', optionalAuth, getEvents);
 router.get('/:id', optionalAuth, getEventById);
 
 router.post('/', [
-  optionalAuth,
+  authenticateToken,
   developmentMode,
   body('title').notEmpty().withMessage('Title is required'),
   body('start_datetime').isISO8601().withMessage('Valid start datetime is required'),
@@ -42,18 +42,18 @@ router.post('/', [
 ], createEvent);
 
 router.put('/:id', [
-  optionalAuth,
+  authenticateToken,
   developmentMode,
   body('title').optional().notEmpty().withMessage('Title cannot be empty'),
   body('start_datetime').optional().isISO8601().withMessage('Valid start datetime is required'),
   body('venue_type').optional().isIn(['online', 'offline', 'hybrid']).withMessage('Invalid venue type'),
 ], updateEvent);
 
-router.delete('/:id', [optionalAuth, developmentMode], deleteEvent);
+router.delete('/:id', [authenticateToken, developmentMode], deleteEvent);
 
 router.get('/:id/comments', optionalAuth, getEventComments);
 router.post('/:id/comments', [
-  optionalAuth,
+  authenticateToken,
   developmentMode,
   body('author_name').notEmpty().withMessage('Author name is required'),
   body('content').notEmpty().withMessage('Content is required'),
@@ -61,10 +61,10 @@ router.post('/:id/comments', [
 
 // コメント用のルート（別ファイルに分離予定）
 router.put('/:eventId/comments/:commentId', [
-  optionalAuth,
+  authenticateToken,
   developmentMode,
   body('content').notEmpty().withMessage('Content is required'),
 ], updateEventComment);
-router.delete('/:eventId/comments/:commentId', [optionalAuth, developmentMode], deleteEventComment);
+router.delete('/:eventId/comments/:commentId', [authenticateToken, developmentMode], deleteEventComment);
 
 export default router;

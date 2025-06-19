@@ -11,6 +11,8 @@ import eventRoutes from './routes/events';
 import commentRoutes from './routes/comments';
 import adminRoutes from './routes/admin';
 import authRoutes from './routes/auth';
+import favoriteRoutes from './routes/favorites';
+import notificationRoutes from './routes/notifications';
 import './config/passport'; // Passport設定を読み込み
 
 dotenv.config();
@@ -36,6 +38,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/favorites', favoriteRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

@@ -121,4 +121,76 @@ export const favoriteAPI = {
   },
 };
 
+export const notificationAPI = {
+  getUserNotifications: async (params: { page?: number; limit?: number; unread_only?: boolean } = {}): Promise<{
+    notifications: Array<{
+      id: number;
+      type: string;
+      title: string;
+      message: string;
+      read: boolean;
+      action_url?: string;
+      action_text?: string;
+      created_at: string;
+      event?: { id: number; title: string; start_datetime: string };
+    }>;
+    unreadCount: number;
+  }> => {
+    const response = await api.get('/notifications', { params });
+    return response.data;
+  },
+
+  getUnreadCount: async (): Promise<{ unreadCount: number }> => {
+    const response = await api.get('/notifications/unread-count');
+    return response.data;
+  },
+
+  markAsRead: async (notificationIds: number[]): Promise<{ success: boolean; message: string }> => {
+    const response = await api.patch('/notifications/mark-read', { notification_ids: notificationIds });
+    return response.data;
+  },
+
+  markAllAsRead: async (): Promise<{ success: boolean; message: string }> => {
+    const response = await api.patch('/notifications/mark-all-read');
+    return response.data;
+  },
+
+  deleteNotification: async (id: number): Promise<{ success: boolean; message: string }> => {
+    const response = await api.delete(`/notifications/${id}`);
+    return response.data;
+  },
+
+  getSettings: async (): Promise<{
+    id: number;
+    user_id: string;
+    email_enabled: boolean;
+    browser_enabled: boolean;
+    event_reminders: boolean;
+    comment_notifications: boolean;
+    event_updates: boolean;
+    weekly_digest: boolean;
+    created_at: string;
+    updated_at: string;
+  }> => {
+    const response = await api.get('/notifications/settings');
+    return response.data;
+  },
+
+  updateSettings: async (settings: {
+    email_enabled?: boolean;
+    browser_enabled?: boolean;
+    event_reminders?: boolean;
+    comment_notifications?: boolean;
+    event_updates?: boolean;
+    weekly_digest?: boolean;
+  }): Promise<{
+    settings: any;
+    success: boolean;
+    message: string;
+  }> => {
+    const response = await api.patch('/notifications/settings', settings);
+    return response.data;
+  },
+};
+
 export default api;
