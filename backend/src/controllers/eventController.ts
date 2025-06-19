@@ -102,6 +102,8 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
       return res.status(400).json({ errors: errors.array() });
     }
 
+    const user = (req as any).user;
+
     // データクリーニング
     const eventData = {
       ...req.body,
@@ -110,6 +112,7 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
       image_url: req.body.image_url === '' ? null : req.body.image_url,
       location: req.body.location === '' ? null : req.body.location,
       description: req.body.description === '' ? null : req.body.description,
+      user_id: user?.id || null, // ユーザーIDを追加
     };
 
     console.log('Creating event with data:', eventData);
@@ -133,6 +136,22 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
     }
 
     const { id } = req.params;
+    const user = (req as any).user;
+    
+    // イベントの所有者確認
+    const existingEvent = await prisma.event.findUnique({
+      where: { id: Number(id) },
+      select: { user_id: true }
+    });
+
+    if (!existingEvent) {
+      return res.status(404).json({ error: 'イベントが見つかりません' });
+    }
+
+    // 開発モード以外では所有者のみ編集可能
+    if (user?.id !== 'dev-user' && existingEvent.user_id && existingEvent.user_id !== user?.id) {
+      return res.status(403).json({ error: '他のユーザーが作成したイベントは編集できません' });
+    }
     
     const event = await prisma.event.update({
       where: { id: Number(id) },
@@ -151,6 +170,22 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
 export const deleteEvent = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const user = (req as any).user;
+    
+    // イベントの所有者確認
+    const existingEvent = await prisma.event.findUnique({
+      where: { id: Number(id) },
+      select: { user_id: true }
+    });
+
+    if (!existingEvent) {
+      return res.status(404).json({ error: 'イベントが見つかりません' });
+    }
+
+    // 開発モード以外では所有者のみ削除可能
+    if (user?.id !== 'dev-user' && existingEvent.user_id && existingEvent.user_id !== user?.id) {
+      return res.status(403).json({ error: '他のユーザーが作成したイベントは削除できません' });
+    }
     
     await prisma.event.update({
       where: { id: Number(id) },
@@ -211,11 +246,13 @@ export const createEventComment = async (req: Request, res: Response, next: Next
     }
 
     const { id } = req.params;
+    const user = (req as any).user;
     
     const comment = await prisma.comment.create({
       data: {
         ...req.body,
-        event_id: Number(id)
+        event_id: Number(id),
+        user_id: user?.id || null, // ユーザーIDを追加
       }
     });
 
@@ -233,6 +270,7 @@ export const updateEventComment = async (req: Request, res: Response, next: Next
     }
 
     const { eventId, commentId } = req.params;
+    const user = (req as any).user;
     
     // コメントが存在し、指定されたイベントに属するかチェック
     const existingComment = await prisma.comment.findFirst({
@@ -244,13 +282,19 @@ export const updateEventComment = async (req: Request, res: Response, next: Next
     });
 
     if (!existingComment) {
-      throw createError('Comment not found', 404);
+      return res.status(404).json({ error: 'コメントが見つかりません' });
+    }
+
+    // 開発モード以外では所有者のみ編集可能
+    if (user?.id !== 'dev-user' && existingComment.user_id && existingComment.user_id !== user?.id) {
+      return res.status(403).json({ error: '他のユーザーが作成したコメントは編集できません' });
     }
 
     const comment = await prisma.comment.update({
       where: { id: Number(commentId) },
       data: {
-        content: req.body.content
+        content: req.body.content,
+        updated_at: new Date()
       }
     });
 
@@ -263,6 +307,7 @@ export const updateEventComment = async (req: Request, res: Response, next: Next
 export const deleteEventComment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { eventId, commentId } = req.params;
+    const user = (req as any).user;
     
     // コメントが存在し、指定されたイベントに属するかチェック
     const existingComment = await prisma.comment.findFirst({
@@ -273,7 +318,12 @@ export const deleteEventComment = async (req: Request, res: Response, next: Next
     });
 
     if (!existingComment) {
-      throw createError('Comment not found', 404);
+      return res.status(404).json({ error: 'コメントが見つかりません' });
+    }
+
+    // 開発モード以外では所有者のみ削除可能
+    if (user?.id !== 'dev-user' && existingComment.user_id && existingComment.user_id !== user?.id) {
+      return res.status(403).json({ error: '他のユーザーが作成したコメントは削除できません' });
     }
 
     // 物理削除ではなく、is_reported フラグを立てる（ソフト削除）

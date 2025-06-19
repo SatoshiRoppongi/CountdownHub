@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { QueryProvider } from './providers/QueryProvider';
 import { ToastProvider } from './contexts/ToastContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { Header } from './components/Header';
 import { EventListPage } from './pages/EventListPage';
 import { EventDetailPage } from './pages/EventDetailPage';
 import { EventRegistrationPage } from './pages/EventRegistrationPage';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AuthPage } from './pages/AuthPage';
+import { AuthCallbackPage } from './pages/AuthCallbackPage';
 
 function AppContent() {
   const location = useLocation();
@@ -51,6 +54,8 @@ function AppContent() {
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/register" element={<EventRegistrationPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
         </Routes>
       </main>
     </div>
@@ -61,9 +66,11 @@ function App() {
   return (
     <QueryProvider>
       <ToastProvider>
-        <Router>
-          <AppContent />
-        </Router>
+        <AuthProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </AuthProvider>
       </ToastProvider>
     </QueryProvider>
   );

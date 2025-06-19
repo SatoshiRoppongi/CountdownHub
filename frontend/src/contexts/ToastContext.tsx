@@ -5,6 +5,7 @@ interface ToastContextType {
   addToast: (toast: Omit<ToastMessage, 'id'>) => void;
   removeToast: (id: string) => void;
   showEventStarted: (eventTitle: string) => void;
+  showToast: (toast: Omit<ToastMessage, 'id'>) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -25,7 +26,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const addToast = useCallback((toast: Omit<ToastMessage, 'id'>) => {
-    const id = Math.random().toString(36).substr(2, 9);
+    const id = Math.random().toString(36).substring(2, 11);
     const newToast: ToastMessage = { ...toast, id };
     
     setToasts(prev => [...prev, newToast]);
@@ -44,10 +45,15 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     });
   }, [addToast]);
 
+  const showToast = useCallback((toast: Omit<ToastMessage, 'id'>) => {
+    addToast(toast);
+  }, [addToast]);
+
   const contextValue: ToastContextType = {
     addToast,
     removeToast,
     showEventStarted,
+    showToast,
   };
 
   return (

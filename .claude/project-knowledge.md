@@ -206,6 +206,336 @@ export const getUrgencyColor = (timeLeft: TimeLeft | null): string => {
 };
 ```
 
+## 認証システム設計パターン
+
+### 現在の実装（自前JWT認証）
+```typescript
+// JWT認証ミドルウェア
+export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
+  (req as any).user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+  next();
+};
+```
+
+### IDプロバイダー移行対応設計
+
+#### AWS Cognito 移行パターン
+```typescript
+// JWT検証をCognito JWKSに変更
+import { CognitoJwtVerifier } from "aws-jwt-verify";
+
+const verifier = CognitoJwtVerifier.create({
+  userPoolId: process.env.COGNITO_USER_POOL_ID!,
+  tokenUse: "access",
+  clientId: process.env.COGNITO_CLIENT_ID!,
+});
+
+export const cognitoAuth = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.headers['authorization']?.split(' ')[1];
+    const payload = await verifier.verify(token);
+    
+    // 既存のユーザーテーブルと同期
+    let user = await prisma.user.findUnique({ where: { email: payload.email } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          id: payload.sub,
+          email: payload.email,
+          username: payload.preferred_username || payload.email,
+          display_name: payload.name
+        }
+      });
+    }
+    
+    (req as any).user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: '認証に失敗しました' });
+  }
+};
+```
+
+#### Firebase Authentication 移行パターン
+```typescript
+import admin from 'firebase-admin';
+
+export const firebaseAuth = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.headers['authorization']?.split(' ')[1];
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    
+    // 既存のユーザーテーブルと同期
+    let user = await prisma.user.findUnique({ where: { id: decodedToken.uid } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          id: decodedToken.uid,
+          email: decodedToken.email,
+          username: decodedToken.email?.split('@')[0] || 'user',
+          display_name: decodedToken.name
+        }
+      });
+    }
+    
+    (req as any).user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: '認証に失敗しました' });
+  }
+};
+```
+
+#### フロントエンド認証抽象化パターン
+```typescript
+// 認証プロバイダー抽象化
+interface AuthProvider {
+  login(email: string, password: string): Promise<User>;
+  register(userData: RegisterData): Promise<User>;
+  logout(): Promise<void>;
+  getCurrentUser(): Promise<User | null>;
+  getToken(): Promise<string | null>;
+}
+
+// 自前JWT実装
+class JWTAuthProvider implements AuthProvider {
+  async login(email: string, password: string): Promise<User> {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+    const { user, token } = await response.json();
+    localStorage.setItem('token', token);
+    return user;
+  }
+}
+
+// Cognito実装
+class CognitoAuthProvider implements AuthProvider {
+  async login(email: string, password: string): Promise<User> {
+    const user = await Auth.signIn(email, password);
+    const token = (await Auth.currentSession()).getIdToken().getJwtToken();
+    return this.syncUserWithDatabase(user, token);
+  }
+}
+
+// Firebase実装
+class FirebaseAuthProvider implements AuthProvider {
+  async login(email: string, password: string): Promise<User> {
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    const token = await credential.user.getIdToken();
+    return this.syncUserWithDatabase(credential.user, token);
+  }
+}
+```
+
+### 移行戦略
+
+#### フェーズ1: 抽象化層導入
+```typescript
+// AuthContext を抽象化
+const authProvider = process.env.REACT_APP_AUTH_PROVIDER === 'cognito' 
+  ? new CognitoAuthProvider()
+  : new JWTAuthProvider();
+
+export const AuthProvider: React.FC = ({ children }) => {
+  // 共通ロジック
+  return <AuthContext.Provider value={authProvider}>{children}</AuthContext.Provider>;
+};
+```
+
+#### フェーズ2: バックエンド認証切り替え
+```typescript
+// 環境変数による切り替え
+const authMiddleware = process.env.AUTH_PROVIDER === 'cognito' 
+  ? cognitoAuth 
+  : process.env.AUTH_PROVIDER === 'firebase'
+  ? firebaseAuth
+  : authenticateToken;
+
+router.post('/events', authMiddleware, createEvent);
+```
+
+#### フェーズ3: データベース移行
+```typescript
+// 既存ユーザーの移行スクリプト
+async function migrateUsersToCognito() {
+  const users = await prisma.user.findMany();
+  
+  for (const user of users) {
+    try {
+      // Cognitoにユーザー作成
+      const cognitoUser = await cognito.adminCreateUser({
+        UserPoolId: process.env.COGNITO_USER_POOL_ID,
+        Username: user.email,
+        TemporaryPassword: generateTempPassword(),
+        MessageAction: 'SUPPRESS'
+      }).promise();
+      
+      // IDをCognito UUIDに更新
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { id: cognitoUser.User?.Username }
+      });
+    } catch (error) {
+      console.error(`Failed to migrate user ${user.email}:`, error);
+    }
+  }
+}
+```
+
+### クラウドプラットフォーム対応
+
+#### AWS対応
+```dockerfile
+# ECS/Fargate デプロイ
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+EXPOSE 3001
+CMD ["node", "dist/index.js"]
+```
+
+#### Google Cloud対応
+```yaml
+# Cloud Run デプロイ
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: countdown-hub
+spec:
+  template:
+    spec:
+      containers:
+      - image: gcr.io/PROJECT_ID/countdown-hub
+        ports:
+        - containerPort: 3001
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: url
+```
+
+#### Azure対応
+```yaml
+# Azure Container Apps
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: countdown-hub
+spec:
+  template:
+    spec:
+      containers:
+      - name: app
+        image: YOUR_REGISTRY/countdown-hub
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: azure-sql-secret
+              key: connection-string
+```
+
+この設計により、任意のIDプロバイダー・クラウドプラットフォームへの移行が可能です。
+
+## ソーシャルログイン実装パターン
+
+### 現在のソーシャルログイン実装
+```typescript
+// Passport.js戦略による実装
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID!,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  callbackURL: '/api/auth/google/callback'
+}, async (accessToken, refreshToken, profile, done) => {
+  // ユーザー検索・作成・更新ロジック
+}));
+```
+
+### 対応済みプロバイダー
+1. **Google OAuth 2.0** ✅
+   - プロフィール情報とメールアドレス取得
+   - 既存アカウントとの自動リンク機能
+   - アバター画像同期
+
+### 実装予定プロバイダー
+2. **GitHub OAuth**
+   ```typescript
+   passport.use(new GitHubStrategy({
+     clientID: process.env.GITHUB_CLIENT_ID!,
+     clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+     callbackURL: '/api/auth/github/callback'
+   }, async (accessToken, refreshToken, profile, done) => {
+     // GitHub固有の実装
+   }));
+   ```
+
+3. **X (Twitter) OAuth**
+   ```typescript
+   passport.use(new TwitterStrategy({
+     consumerKey: process.env.TWITTER_CLIENT_ID!,
+     consumerSecret: process.env.TWITTER_CLIENT_SECRET!,
+     callbackURL: '/api/auth/twitter/callback'
+   }, async (token, tokenSecret, profile, done) => {
+     // Twitter固有の実装
+   }));
+   ```
+
+4. **LINE Login**
+   ```typescript
+   passport.use(new LineStrategy({
+     channelID: process.env.LINE_CHANNEL_ID!,
+     channelSecret: process.env.LINE_CHANNEL_SECRET!,
+     callbackURL: '/api/auth/line/callback'
+   }, async (accessToken, refreshToken, profile, done) => {
+     // LINE固有の実装
+   }));
+   ```
+
+### フロントエンド統合パターン
+```typescript
+// ソーシャルログインボタンコンポーネント
+<SocialLoginButton
+  provider="google"
+  onLogin={handleSocialLogin}
+  disabled={isLoading}
+/>
+
+// ユーザープロフィール設定
+<UserProfileSettings />
+```
+
+### セキュリティ考慮事項
+- **CSRF Protection**: ステートパラメータによる検証
+- **アカウントリンク**: 既存メールアドレスとの自動関連付け
+- **最後のアカウント保護**: パスワードなしユーザーの最後のソーシャルアカウント削除防止
+- **スコープ最小化**: 必要最小限の権限要求
+
+### データベース設計
+```prisma
+model User {
+  // 基本情報
+  id            String   @id @default(cuid())
+  email         String   @unique
+  username      String   @unique
+  password      String?  // ソーシャルユーザーはnull
+  
+  // ソーシャルログイン連携
+  google_id     String?  @unique
+  github_id     String?  @unique
+  twitter_id    String?  @unique
+  line_id       String?  @unique
+  auth_provider String   @default("local")
+}
+```
+
 ## セキュリティパターン
 
 ### 入力値検証

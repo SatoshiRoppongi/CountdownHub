@@ -25,13 +25,48 @@ model Event {
   is_active      Boolean   @default(true)
   created_at     DateTime  @default(now()) @db.Timestamptz(6)
   updated_at     DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  user_id        String?   @db.VarChar(255) // 作成者ユーザーID（既存イベントとの互換性のためnullable）
 
-  comments Comment[]
+  comments  Comment[]
+  favorites Favorite[]
+  user      User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
 
   @@map("events")
   @@index([start_datetime])
   @@index([is_active])
   @@index([tags])
+  @@index([user_id])
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique @db.VarChar(255)
+  username    String   @unique @db.VarChar(50)
+  password    String?  @db.VarChar(255) // ソーシャルログインユーザーはパスワードなし
+  display_name String? @db.VarChar(100)
+  avatar_url  String?  @db.VarChar(500)
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  // ソーシャルログイン関連
+  google_id   String?  @unique @db.VarChar(255)
+  github_id   String?  @unique @db.VarChar(255)
+  twitter_id  String?  @unique @db.VarChar(255)
+  line_id     String?  @unique @db.VarChar(255)
+  
+  auth_provider String @default("local") @db.VarChar(50) // local, google, github, twitter, line
+
+  events    Event[]
+  comments  Comment[]
+  favorites Favorite[]
+
+  @@map("users")
+  @@index([email])
+  @@index([username])
+  @@index([google_id])
+  @@index([github_id])
+  @@index([auth_provider])
 }
 
 model Comment {
@@ -42,12 +77,30 @@ model Comment {
   is_reported Boolean  @default(false)
   created_at  DateTime @default(now()) @db.Timestamptz(6)
   updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  user_id     String?  @db.VarChar(255) // ユーザーIDを追加（既存コメントとの互換性のためnullable）
 
   event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
 
   @@map("comments")
   @@index([event_id])
   @@index([is_reported])
+  @@index([user_id])
+}
+
+model Favorite {
+  id         Int      @id @default(autoincrement())
+  event_id   Int
+  user_id    String   @db.VarChar(255) // ユーザーIDまたはセッションID
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("favorites")
+  @@unique([event_id, user_id])
+  @@index([event_id])
+  @@index([user_id])
 }
 
 enum VenueType {
