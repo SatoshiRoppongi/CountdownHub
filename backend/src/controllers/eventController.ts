@@ -166,21 +166,38 @@ export const deleteEvent = async (req: Request, res: Response, next: NextFunctio
 export const getEventComments = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, sort = 'desc' } = req.query;
     
     const offset = (Number(page) - 1) * Number(limit);
+    const sortOrder = sort === 'asc' ? 'asc' : 'desc';
     
-    const comments = await prisma.comment.findMany({
-      where: { 
-        event_id: Number(id),
-        is_reported: false
-      },
-      orderBy: { created_at: 'desc' },
-      skip: offset,
-      take: Number(limit)
-    });
+    const [comments, total] = await Promise.all([
+      prisma.comment.findMany({
+        where: { 
+          event_id: Number(id),
+          is_reported: false
+        },
+        orderBy: { created_at: sortOrder },
+        skip: offset,
+        take: Number(limit)
+      }),
+      prisma.comment.count({
+        where: { 
+          event_id: Number(id),
+          is_reported: false
+        }
+      })
+    ]);
 
-    res.json(comments);
+    const hasMore = offset + comments.length < total;
+
+    res.json({
+      comments,
+      total,
+      hasMore,
+      page: Number(page),
+      limit: Number(limit)
+    });
   } catch (error) {
     next(error);
   }
@@ -203,6 +220,69 @@ export const createEventComment = async (req: Request, res: Response, next: Next
     });
 
     res.status(201).json(comment);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateEventComment = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { eventId, commentId } = req.params;
+    
+    // コメントが存在し、指定されたイベントに属するかチェック
+    const existingComment = await prisma.comment.findFirst({
+      where: {
+        id: Number(commentId),
+        event_id: Number(eventId),
+        is_reported: false
+      }
+    });
+
+    if (!existingComment) {
+      throw createError('Comment not found', 404);
+    }
+
+    const comment = await prisma.comment.update({
+      where: { id: Number(commentId) },
+      data: {
+        content: req.body.content
+      }
+    });
+
+    res.json(comment);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteEventComment = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { eventId, commentId } = req.params;
+    
+    // コメントが存在し、指定されたイベントに属するかチェック
+    const existingComment = await prisma.comment.findFirst({
+      where: {
+        id: Number(commentId),
+        event_id: Number(eventId)
+      }
+    });
+
+    if (!existingComment) {
+      throw createError('Comment not found', 404);
+    }
+
+    // 物理削除ではなく、is_reported フラグを立てる（ソフト削除）
+    await prisma.comment.update({
+      where: { id: Number(commentId) },
+      data: { is_reported: true }
+    });
+
+    res.status(204).send();
   } catch (error) {
     next(error);
   }

@@ -7,7 +7,9 @@ import {
   updateEvent,
   deleteEvent,
   getEventComments,
-  createEventComment
+  createEventComment,
+  updateEventComment,
+  deleteEventComment
 } from '../controllers/eventController';
 
 const router = Router();
@@ -49,5 +51,11 @@ router.post('/:id/comments', [
   body('author_name').notEmpty().withMessage('Author name is required'),
   body('content').notEmpty().withMessage('Content is required'),
 ], createEventComment);
+
+// コメント用のルート（別ファイルに分離予定）
+router.put('/:eventId/comments/:commentId', [
+  body('content').notEmpty().withMessage('Content is required'),
+], updateEventComment);
+router.delete('/:eventId/comments/:commentId', deleteEventComment);
 
 export default router;

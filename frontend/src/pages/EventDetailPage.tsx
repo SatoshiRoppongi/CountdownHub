@@ -1,0 +1,248 @@
+import React from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useEvent } from '../hooks/useEvents';
+import { CountdownTimer } from '../components/CountdownTimer';
+import { CommentSection } from '../components/CommentSection';
+import { StickyCountdownHeader } from '../components/StickyCountdownHeader';
+import { FullscreenCountdownOverlay } from '../components/FullscreenCountdownOverlay';
+import { useToast } from '../contexts/ToastContext';
+
+export const EventDetailPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const eventId = parseInt(id || '0', 10);
+  const { showEventStarted } = useToast();
+  const navigate = useNavigate();
+  
+  const { data: event, isLoading, error } = useEvent(eventId);
+
+  const handleEventFinish = () => {
+    if (event) {
+      showEventStarted(event.title);
+    }
+  };
+
+  const handleTagClick = (tag: string) => {
+    // タグクリック時に検索ページに遷移
+    navigate(`/?search=${encodeURIComponent(tag)}`);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      weekday: 'long',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getVenueTypeIcon = (venueType: string | null) => {
+    switch (venueType) {
+      case 'online': return '💻';
+      case 'offline': return '🏢';
+      case 'hybrid': return '🔄';
+      default: return '📍';
+    }
+  };
+
+  const getVenueTypeText = (venueType: string | null) => {
+    switch (venueType) {
+      case 'online': return 'オンライン開催';
+      case 'offline': return 'オフライン開催';
+      case 'hybrid': return 'ハイブリッド開催';
+      default: return '開催形式：未設定';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded mb-4"></div>
+          <div className="h-64 bg-gray-200 rounded mb-6"></div>
+          <div className="h-4 bg-gray-200 rounded mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !event) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <div className="text-6xl mb-4">❌</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            イベントが見つかりません
+          </h2>
+          <p className="text-gray-600 mb-4">
+            指定されたイベントは存在しないか、削除された可能性があります。
+          </p>
+          <Link 
+            to="/"
+            className="inline-block bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            イベント一覧に戻る
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Sticky Header */}
+      <StickyCountdownHeader
+        targetDate={event.start_datetime}
+        eventTitle={event.title}
+        onFinish={handleEventFinish}
+      />
+
+      {/* Fullscreen Countdown Overlay */}
+      <FullscreenCountdownOverlay
+        targetDate={event.start_datetime}
+        eventTitle={event.title}
+        onFinish={handleEventFinish}
+      />
+
+      <div className="container mx-auto px-4 py-8">
+        {/* ナビゲーション */}
+        <nav className="mb-6">
+          <Link 
+            to="/"
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            ← イベント一覧に戻る
+          </Link>
+        </nav>
+
+      <div className="max-w-4xl mx-auto">
+        {/* アイキャッチ画像 */}
+        {event.image_url && (
+          <div className="mb-8 rounded-lg overflow-hidden shadow-lg">
+            <img 
+              src={event.image_url} 
+              alt={event.title}
+              className="w-full h-64 md:h-96 object-cover"
+            />
+          </div>
+        )}
+
+        {/* カウントダウンタイマー */}
+        <div id="main-countdown-timer" className="mb-8 text-center">
+          <CountdownTimer 
+            targetDate={event.start_datetime} 
+            size="large"
+            onFinish={handleEventFinish}
+          />
+        </div>
+
+        {/* イベント情報 */}
+        <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+            {event.title}
+          </h1>
+
+          {/* 基本情報 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-gray-700 mb-2">📅 開催日時</h3>
+                <p className="text-gray-900">
+                  {formatDate(event.start_datetime)}
+                </p>
+                {event.end_datetime && (
+                  <p className="text-gray-600 text-sm mt-1">
+                    終了: {formatDate(event.end_datetime)}
+                  </p>
+                )}
+              </div>
+
+              {event.location && (
+                <div>
+                  <h3 className="font-semibold text-gray-700 mb-2">
+                    {getVenueTypeIcon(event.venue_type)} 開催場所
+                  </h3>
+                  <p className="text-gray-900">{event.location}</p>
+                  <p className="text-gray-600 text-sm">
+                    {getVenueTypeText(event.venue_type)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              {event.site_url && (
+                <div>
+                  <h3 className="font-semibold text-gray-700 mb-2">🔗 公式サイト</h3>
+                  <a 
+                    href={event.site_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 break-words"
+                  >
+                    {event.site_url}
+                  </a>
+                </div>
+              )}
+
+              {event.tags && event.tags.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-gray-700 mb-2">🏷️ タグ</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {event.tags.map((tag, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleTagClick(tag)}
+                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium hover:bg-blue-200 transition-colors cursor-pointer"
+                        title={`"${tag}"で検索`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    タグをクリックすると、そのタグで検索できます
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* イベント詳細 */}
+          {event.description && (
+            <div className="mb-8">
+              <h3 className="font-semibold text-gray-700 mb-4 text-xl">📝 イベント詳細</h3>
+              <div className="prose max-w-none">
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {event.description}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* メタ情報 */}
+          <div className="pt-6 border-t border-gray-200 text-sm text-gray-500">
+            <div className="flex justify-between items-center">
+              <div>
+                💬 {event._count.comments}件のコメント
+              </div>
+              <div>
+                作成日: {new Date(event.created_at).toLocaleDateString('ja-JP')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* コメントセクション */}
+        <div className="mt-8">
+          <CommentSection eventId={eventId} />
+        </div>
+      </div>
+    </div>
+    </>
+  );
+};
