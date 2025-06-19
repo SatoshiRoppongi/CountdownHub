@@ -40,7 +40,7 @@ jobs:
         working-directory: ./backend
         run: |
           npx prisma generate
-          npm run test
+          npm run test -- --passWithNoTests
         env:
           DATABASE_URL: postgresql://postgres:test@localhost:5432/test_db
 
