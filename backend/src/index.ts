@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 3001;
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15分
-  max: 100, // 最大100リクエスト
+  max: process.env.NODE_ENV === 'development' ? 1000 : 100, // 開発環境では1000リクエスト、本番では100
   message: 'Too many requests from this IP, please try again later.',
 });
 
