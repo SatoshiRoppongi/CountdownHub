@@ -37,6 +37,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchUserProfile = async (authToken: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+      } else {
+        // 無効なトークンの場合、削除
+        localStorage.removeItem('countdown_hub_token');
+        setToken(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+      localStorage.removeItem('countdown_hub_token');
+      setToken(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // トークンをlocalStorageから復元
   useEffect(() => {
     const savedToken = localStorage.getItem('countdown_hub_token');
@@ -47,31 +72,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } else {
       setIsLoading(false);
     }
-  }, [fetchUserProfile]);
-
-  const fetchUserProfile = async (authToken: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      } else {
-        // トークンが無効な場合はログアウト
-        logout();
-      }
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error);
-      logout();
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);

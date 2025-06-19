@@ -98,6 +98,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
 
 export const NotificationBell: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const { showToast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);

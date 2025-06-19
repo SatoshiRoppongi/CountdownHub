@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 export interface ToastMessage {
   id: string;
@@ -23,6 +23,13 @@ export const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  const handleClose = useCallback(() => {
+    setIsLeaving(true);
+    setTimeout(() => {
+      onClose(toast.id);
+    }, 300);
+  }, [onClose, toast.id]);
+
   useEffect(() => {
     if (toast.duration !== -1) {
       const timer = setTimeout(() => {
@@ -31,13 +38,6 @@ export const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
       return () => clearTimeout(timer);
     }
   }, [toast.duration, handleClose]);
-
-  const handleClose = () => {
-    setIsLeaving(true);
-    setTimeout(() => {
-      onClose(toast.id);
-    }, 300);
-  };
 
   const getToastStyles = () => {
     const baseStyles = "relative overflow-hidden rounded-lg shadow-lg p-4 max-w-sm w-full transition-all duration-300 transform";
