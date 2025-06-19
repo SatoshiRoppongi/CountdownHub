@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } else {
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchUserProfile]);
 
   const fetchUserProfile = async (authToken: string) => {
     try {

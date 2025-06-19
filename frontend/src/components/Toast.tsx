@@ -30,7 +30,7 @@ export const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
       }, toast.duration || 5000);
       return () => clearTimeout(timer);
     }
-  }, [toast.duration]);
+  }, [toast.duration, handleClose]);
 
   const handleClose = () => {
     setIsLeaving(true);

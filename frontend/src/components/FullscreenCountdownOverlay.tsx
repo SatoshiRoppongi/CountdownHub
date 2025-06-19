@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useCountdown, CountdownPhase } from '../hooks/useCountdown';
+import { useCountdown } from '../hooks/useCountdown';
 
 interface FullscreenCountdownOverlayProps {
   targetDate: string;

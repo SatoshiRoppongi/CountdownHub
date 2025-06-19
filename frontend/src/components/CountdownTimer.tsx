@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useCountdown, getUrgencyLevel, getUrgencyColor, CountdownPhase } from '../hooks/useCountdown';
+import { useCountdown, getUrgencyLevel, getUrgencyColor } from '../hooks/useCountdown';
 
 interface CountdownTimerProps {
   targetDate: string;

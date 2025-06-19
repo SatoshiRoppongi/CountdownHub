@@ -6,7 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 export const AuthCallbackPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { } = useAuth();
   const { showToast } = useToast();
 
   useEffect(() => {

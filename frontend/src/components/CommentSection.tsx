@@ -13,11 +13,6 @@ interface CommentFormData {
   content: string;
 }
 
-interface CommentResponse {
-  comments: Comment[];
-  total: number;
-  hasMore: boolean;
-}
 
 export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
   const { user, isAuthenticated } = useAuth();

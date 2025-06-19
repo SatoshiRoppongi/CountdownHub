@@ -22,7 +22,6 @@ interface NotificationItemProps {
 }
 
 const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMarkAsRead, onClose }) => {
-  const { showToast } = useToast();
 
   const handleClick = () => {
     if (!notification.read) {
@@ -98,8 +97,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onMar
 };
 
 export const NotificationBell: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
-  const { showToast } = useToast();
+  const { isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);

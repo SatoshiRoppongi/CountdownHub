@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { favoriteAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';

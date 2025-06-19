@@ -20,9 +20,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // Initialize Analytics (only in production)
-let analytics;
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-  analytics = getAnalytics(app);
+  getAnalytics(app);
 }
 
 export const auth = getAuth(app);
