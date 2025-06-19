@@ -1,20 +1,24 @@
-FROM node:18
+FROM node:20-bullseye
 
-# Install required packages for Prisma
-RUN apt-get update && apt-get install -y \
-    openssl \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+# Install OpenSSL 1.1 for Prisma compatibility  
+RUN apt-get update && apt-get install -y libssl1.1 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
+# Copy package files
 COPY package*.json ./
-RUN npm ci
 
+# Copy Prisma schema first (needed for postinstall)
+COPY prisma ./prisma/
+
+# Install dependencies (this will run prisma generate via postinstall)
+RUN npm install
+
+# Copy rest of the source code
 COPY . .
 
-RUN npx prisma generate
-
+# Expose port
 EXPOSE 3001
 
+# Start development server
 CMD ["npm", "run", "dev"]

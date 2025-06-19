@@ -13,6 +13,7 @@ import adminRoutes from './routes/admin';
 import authRoutes from './routes/auth';
 import favoriteRoutes from './routes/favorites';
 import notificationRoutes from './routes/notifications';
+import firebaseAuthRoutes from './routes/firebaseAuth';
 import './config/passport'; // Passport設定を読み込み
 
 dotenv.config();
@@ -35,6 +36,7 @@ app.use(passport.initialize());
 app.use(logger);
 
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', firebaseAuthRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/admin', adminRoutes);

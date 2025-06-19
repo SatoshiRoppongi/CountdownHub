@@ -9,6 +9,12 @@ frontend/node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+backend/.env
+frontend/.env.local
+
+# Firebase
+firebase-adminsdk-*.json
+serviceAccountKey.json
 
 # Build outputs
 backend/dist/
