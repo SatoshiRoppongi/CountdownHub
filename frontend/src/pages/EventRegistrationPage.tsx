@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useCreateEvent } from '../hooks/useEvents';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useCreateEvent, useEvent, useUpdateEvent } from '../hooks/useEvents';
 import { Event } from '../types';
 
 interface EventFormData {
@@ -19,7 +19,15 @@ interface EventFormData {
 
 export const EventRegistrationPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editEventId = searchParams.get('edit');
+  const isEditMode = !!editEventId;
+  
   const createEventMutation = useCreateEvent();
+  const updateEventMutation = useUpdateEvent();
+  const { data: editEvent, isLoading: isLoadingEvent } = useEvent(
+    editEventId ? parseInt(editEventId, 10) : 0
+  );
   
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
@@ -36,6 +44,28 @@ export const EventRegistrationPage: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // 編集時にフォームデータを初期化
+  useEffect(() => {
+    if (isEditMode && editEvent) {
+      const startDate = new Date(editEvent.start_datetime);
+      const endDate = editEvent.end_datetime ? new Date(editEvent.end_datetime) : null;
+      
+      setFormData({
+        title: editEvent.title || '',
+        description: editEvent.description || '',
+        start_date: startDate.toISOString().split('T')[0],
+        start_time: startDate.toTimeString().slice(0, 5),
+        end_date: endDate ? endDate.toISOString().split('T')[0] : '',
+        end_time: endDate ? endDate.toTimeString().slice(0, 5) : '',
+        location: editEvent.location || '',
+        venue_type: editEvent.venue_type || '',
+        site_url: editEvent.site_url || '',
+        image_url: editEvent.image_url || '',
+        tags: editEvent.tags ? editEvent.tags.join(', ') : '',
+      });
+    }
+  }, [isEditMode, editEvent]);
 
   // 日付と時間を組み合わせてISO文字列に変換
   const combineDateAndTime = (date: string, time: string): string => {
@@ -161,15 +191,23 @@ export const EventRegistrationPage: React.FC = () => {
     console.log('Sending event data:', eventData);
 
     try {
-      const createdEvent = await createEventMutation.mutateAsync(eventData);
-      navigate(`/events/${createdEvent.id}`);
+      if (isEditMode && editEventId) {
+        const updatedEvent = await updateEventMutation.mutateAsync({
+          id: parseInt(editEventId, 10),
+          data: eventData
+        });
+        navigate(`/events/${updatedEvent.id}`);
+      } else {
+        const createdEvent = await createEventMutation.mutateAsync(eventData);
+        navigate(`/events/${createdEvent.id}`);
+      }
     } catch (error: any) {
-      console.error('Event creation failed:', error);
+      console.error(`Event ${isEditMode ? 'update' : 'creation'} failed:`, error);
       console.error('Error response:', error.response?.data);
       // エラーメッセージを表示
       const errorMessage = error.response?.data?.errors?.length 
         ? error.response.data.errors.map((err: any) => err.msg).join(', ')
-        : 'イベントの登録に失敗しました。もう一度お試しください。';
+        : `イベントの${isEditMode ? '更新' : '登録'}に失敗しました。もう一度お試しください。`;
       setErrors({ submit: errorMessage });
     }
   };
@@ -186,6 +224,26 @@ export const EventRegistrationPage: React.FC = () => {
     }
   };
 
+  // 編集モードでデータ読み込み中の場合
+  if (isEditMode && isLoadingEvent) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded mb-6"></div>
+              <div className="space-y-4">
+                <div className="h-10 bg-gray-200 rounded"></div>
+                <div className="h-24 bg-gray-200 rounded"></div>
+                <div className="h-10 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* ナビゲーション */}
@@ -201,7 +259,7 @@ export const EventRegistrationPage: React.FC = () => {
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">
-            🎉 新しいイベントを登録
+            {isEditMode ? '✏️ イベントを編集' : '🎉 新しいイベントを登録'}
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -457,10 +515,12 @@ export const EventRegistrationPage: React.FC = () => {
               </Link>
               <button
                 type="submit"
-                disabled={createEventMutation.isPending}
+                disabled={createEventMutation.isPending || updateEventMutation.isPending}
                 className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {createEventMutation.isPending ? '登録中...' : 'イベントを登録'}
+                {(createEventMutation.isPending || updateEventMutation.isPending) 
+                  ? (isEditMode ? '更新中...' : '登録中...') 
+                  : (isEditMode ? 'イベントを更新' : 'イベントを登録')}
               </button>
             </div>
           </form>

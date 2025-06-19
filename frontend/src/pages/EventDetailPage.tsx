@@ -8,6 +8,7 @@ import { FullscreenCountdownOverlay } from '../components/FullscreenCountdownOve
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { eventAPI } from '../services/api';
+import { FavoriteButton } from '../components/FavoriteButton';
 
 export const EventDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -171,23 +172,27 @@ export const EventDetailPage: React.FC = () => {
               {event.title}
             </h1>
             
-            {/* 編集・削除ボタン（所有者のみ表示） */}
-            {isOwner && (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleEditEvent}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  ✏️ 編集
-                </button>
-                <button
-                  onClick={handleDeleteEvent}
-                  className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  🗑️ 削除
-                </button>
-              </div>
-            )}
+            {/* アクションボタン */}
+            <div className="flex gap-2">
+              <FavoriteButton eventId={eventId} size="medium" />
+              
+              {isOwner && (
+                <>
+                  <button
+                    onClick={handleEditEvent}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    ✏️ 編集
+                  </button>
+                  <button
+                    onClick={handleDeleteEvent}
+                    className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    🗑️ 削除
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* 基本情報 */}

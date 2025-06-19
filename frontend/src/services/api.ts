@@ -101,4 +101,24 @@ export const adminAPI = {
   },
 };
 
+export const favoriteAPI = {
+  addFavorite: async (eventId: number): Promise<void> => {
+    await api.post(`/favorites/events/${eventId}`);
+  },
+
+  removeFavorite: async (eventId: number): Promise<void> => {
+    await api.delete(`/favorites/events/${eventId}`);
+  },
+
+  getUserFavorites: async (page = 1, limit = 20): Promise<EventsResponse> => {
+    const response = await api.get('/favorites', { params: { page, limit } });
+    return response.data;
+  },
+
+  checkFavoriteStatus: async (eventId: number): Promise<{ is_favorited: boolean }> => {
+    const response = await api.get(`/favorites/events/${eventId}/status`);
+    return response.data;
+  },
+};
+
 export default api;
