@@ -2,8 +2,9 @@ services:
   - type: web
     name: countdown-hub-api
     env: node
-    buildCommand: cd backend && npm install && npx prisma generate && npm run build
-    startCommand: cd backend && npm start
+    rootDir: backend
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
