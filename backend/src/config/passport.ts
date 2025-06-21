@@ -33,12 +33,13 @@ passport.use(new JwtStrategy({
   }
 }));
 
-// Google OAuth Strategy
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID!,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback'
-}, async (accessToken, refreshToken, profile, done) => {
+// Google OAuth Strategy (環境変数が設定されている場合のみ)
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback'
+  }, async (accessToken, refreshToken, profile, done) => {
   try {
     // 既存のGoogleユーザーをチェック
     let user = await prisma.user.findUnique({
@@ -110,7 +111,8 @@ passport.use(new GoogleStrategy({
     console.error('Google OAuth error:', error);
     return done(error, false);
   }
-}));
+  }));
+}
 
 // シリアライゼーション（セッション使用時に必要だが、今回はJWTなので空実装）
 passport.serializeUser((user: any, done) => {
