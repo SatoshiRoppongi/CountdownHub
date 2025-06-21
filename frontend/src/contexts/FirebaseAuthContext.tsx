@@ -72,21 +72,33 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
     };
 
     const signInWithGoogle = async () => {
+      if (!auth) {
+        throw new Error('Firebase authentication is not configured');
+      }
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
     };
 
     const signInWithGithub = async () => {
+      if (!auth) {
+        throw new Error('Firebase authentication is not configured');
+      }
       const provider = new GithubAuthProvider();
       await signInWithPopup(auth, provider);
     };
 
     const signInWithTwitter = async () => {
+      if (!auth) {
+        throw new Error('Firebase authentication is not configured');
+      }
       const provider = new TwitterAuthProvider();
       await signInWithPopup(auth, provider);
     };
 
     const logout = async () => {
+      if (!auth) {
+        throw new Error('Firebase authentication is not configured');
+      }
       await signOut(auth);
     };
 
