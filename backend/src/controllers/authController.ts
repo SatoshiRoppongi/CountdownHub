@@ -195,7 +195,7 @@ export const login = async (req: Request, res: Response) => {
 // プロフィール取得
 export const getProfile = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.userId;
+    const userId = (req as any).user?.id;
     
     if (!userId) {
       return res.status(401).json({ error: '認証が必要です' });
@@ -284,7 +284,7 @@ export const googleCallback = (req: Request, res: Response, next: Function) => {
 // ソーシャルログイン用のアカウント連携
 export const linkSocialAccount = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.userId;
+    const userId = (req as any).user?.id;
     const { provider, provider_id } = req.body;
 
     if (!userId) {
@@ -347,7 +347,7 @@ export const linkSocialAccount = async (req: Request, res: Response) => {
 // ソーシャルログインアカウントの連携解除
 export const unlinkSocialAccount = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.userId;
+    const userId = (req as any).user?.id;
     const { provider } = req.body;
 
     if (!userId) {

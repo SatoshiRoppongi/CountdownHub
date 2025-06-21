@@ -8,7 +8,12 @@ export const AuthCallbackPage: React.FC = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
+    let handled = false; // 重複処理防止フラグ
+    
     const handleAuthCallback = async () => {
+      if (handled) return;
+      handled = true;
+      
       const token = searchParams.get('token');
       const provider = searchParams.get('provider');
       const error = searchParams.get('error');
@@ -65,20 +70,24 @@ export const AuthCallbackPage: React.FC = () => {
           }
         } catch (error) {
           console.error('Auth callback error:', error);
-          showToast({
-            type: 'error',
-            title: '認証エラー',
-            message: '認証処理に失敗しました'
-          });
+          if (!handled) {
+            showToast({
+              type: 'error',
+              title: '認証エラー',
+              message: '認証処理に失敗しました'
+            });
+          }
           localStorage.removeItem('countdown_hub_token');
           navigate('/auth');
         }
       } else {
-        showToast({
-          type: 'error',
-          title: '認証エラー',
-          message: '認証情報が不正です'
-        });
+        if (!handled) {
+          showToast({
+            type: 'error',
+            title: '認証エラー',
+            message: '認証情報が不正です'
+          });
+        }
         navigate('/auth');
       }
     };
