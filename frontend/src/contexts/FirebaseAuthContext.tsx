@@ -26,6 +26,11 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+      if (!auth) {
+        setLoading(false);
+        return;
+      }
+      
       const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
         setUser(user);
         setLoading(false);

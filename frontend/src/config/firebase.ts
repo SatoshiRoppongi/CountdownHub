@@ -16,12 +16,21 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only if configuration is present
+let app;
+let auth;
 
-// Initialize Analytics (only in production)
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-  getAnalytics(app);
+if (firebaseConfig.projectId) {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  
+  // Initialize Analytics (only in production)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+    getAnalytics(app);
+  }
+} else {
+  console.warn('Firebase configuration is missing. Firebase features will be disabled.');
+  auth = null;
 }
 
-export const auth = getAuth(app);
+export { auth };
