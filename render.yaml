@@ -2,9 +2,8 @@ services:
   - type: web
     name: countdown-hub-api
     env: node
-    rootDir: backend
-    buildCommand: npm ci && npx prisma generate && npm run build
-    startCommand: npm start
+    buildCommand: cd backend && npm ci && npx prisma generate && npm run build
+    startCommand: cd backend && npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -30,7 +29,7 @@ services:
         value: https://countdownhub.jp
     healthCheckPath: /health
 
-  databases:
-    - name: countdown-hub-db
-      databaseName: countdown_hub
-      user: countdown_user
+databases:
+  - name: countdown-hub-db
+    databaseName: countdown_hub
+    user: countdown_user
