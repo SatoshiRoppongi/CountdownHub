@@ -30,11 +30,16 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
 
       # Backend tests
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: |
+          npm cache clean --force
+          npm ci --force
 
       - name: Run backend tests
         working-directory: ./backend
@@ -47,7 +52,9 @@ jobs:
       # Frontend tests
       - name: Install frontend dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: |
+          npm cache clean --force
+          npm ci --force
 
       - name: Run frontend tests
         working-directory: ./frontend
