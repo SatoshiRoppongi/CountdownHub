@@ -2,7 +2,7 @@
   "buildCommand": "cd frontend && npm ci && npm run build",
   "outputDirectory": "frontend/build",
   "env": {
-    "REACT_APP_API_URL": "https://countdown-hub-api.onrender.com"
+    "REACT_APP_API_URL": "https://countdownhub.onrender.com"
   },
   "rewrites": [
     {
