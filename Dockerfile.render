@@ -1,0 +1,21 @@
+# Render production Dockerfile
+FROM node:20-bullseye
+
+WORKDIR /app
+
+# Copy root package.json for build scripts
+COPY package.json ./
+
+# Copy backend files
+COPY backend/ ./backend/
+
+# Install dependencies and build
+RUN cd backend && npm ci
+RUN cd backend && npx prisma generate
+RUN cd backend && npm run build
+
+# Expose port
+EXPOSE 3001
+
+# Start the application
+CMD ["npm", "run", "start:backend"]
