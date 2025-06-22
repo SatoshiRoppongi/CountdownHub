@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Event } from '../types';
 import { EventCard } from './EventCard';
 import { 
@@ -7,15 +7,39 @@ import {
   getEventTimeCategoryLabel,
   getEventTimeCategoryDescription 
 } from '../utils/eventTimeUtils';
+import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 
 interface EventTimeTabsProps {
   events: Event[];
   searchTerm?: string;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  onLoadMore?: () => void;
 }
 
-export const EventTimeTabs: React.FC<EventTimeTabsProps> = ({ events, searchTerm }) => {
+export const EventTimeTabs: React.FC<EventTimeTabsProps> = ({ 
+  events, 
+  searchTerm, 
+  hasNextPage = false,
+  isFetchingNextPage = false,
+  onLoadMore 
+}) => {
   const [activeTab, setActiveTab] = useState<EventTimeCategory>('today');
-  const categorizedEvents = categorizeEventsByTime(events);
+  const categorizedEvents = useMemo(() => categorizeEventsByTime(events), [events]);
+  
+  // 無限スクロール用のIntersection Observer
+  const { ref: loadMoreRef, isIntersecting } = useIntersectionObserver({
+    threshold: 0.1,
+    rootMargin: '100px',
+    enabled: hasNextPage && !isFetchingNextPage
+  });
+
+  // スクロール位置に到達したら次のページを読み込み
+  useEffect(() => {
+    if (isIntersecting && hasNextPage && !isFetchingNextPage && onLoadMore) {
+      onLoadMore();
+    }
+  }, [isIntersecting, hasNextPage, isFetchingNextPage, onLoadMore]);
 
   const tabs: EventTimeCategory[] = ['today', 'upcoming', 'ongoing', 'ended'];
 
@@ -99,13 +123,26 @@ export const EventTimeTabs: React.FC<EventTimeTabsProps> = ({ events, searchTerm
         </div>
       )}
       
-      {/* ページネーション（将来の実装用プレースホルダー） */}
-      {activeEvents.length > 20 && (
-        <div className="flex justify-center">
-          <div className="bg-white rounded-lg shadow-md p-4">
-            <p className="text-gray-600 text-sm">
-              ページネーション機能は次のフェーズで実装予定です
-            </p>
+      {/* 無限ローディング */}
+      {hasNextPage && (
+        <div ref={loadMoreRef} className="flex justify-center py-8">
+          {isFetchingNextPage ? (
+            <div className="flex items-center space-x-2 text-blue-600">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span className="text-sm font-medium">読み込み中...</span>
+            </div>
+          ) : (
+            <div className="text-gray-500 text-sm">
+              さらに読み込むにはスクロールしてください
+            </div>
+          )}
+        </div>
+      )}
+      
+      {!hasNextPage && activeEvents.length > 0 && (
+        <div className="text-center py-4">
+          <div className="text-gray-500 text-sm">
+            すべてのイベントを表示しました
           </div>
         </div>
       )}
