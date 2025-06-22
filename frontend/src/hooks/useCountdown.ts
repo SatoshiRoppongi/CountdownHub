@@ -71,85 +71,84 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
       }
 
       // イベント開始時
-      if (!timeLeft.isExpired && wasRunning && startDifference <= 0) {
-        const justFinished = true;
-        
-        setTimeLeft(prev => ({
-          ...prev,
-          isExpired: true,
-          phase: 'just-finished',
-          justFinished,
-          isRunning: endTime ? now < endTime : false,
-        }));
-
-        if (justFinished && onFinish) {
-          onFinish();
+      setTimeLeft(prev => {
+        if (!prev.isExpired && wasRunning && startDifference <= 0) {
+          const justFinished = true;
+          
+          if (justFinished && onFinish) {
+            onFinish();
+          }
+          
+          return {
+            ...prev,
+            isExpired: true,
+            phase: 'just-finished',
+            justFinished,
+            isRunning: endTime ? now < endTime : false,
+          };
         }
-        return;
-      }
 
-      // イベント開催中
-      if (endTime && now >= startTime && now < endTime) {
-        const elapsedMs = now - startTime;
-        const elapsedSeconds = Math.floor(elapsedMs / 1000);
-        
-        const days = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((elapsedMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((elapsedMs % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((elapsedMs % (1000 * 60)) / 1000);
+        // イベント開催中
+        if (endTime && now >= startTime && now < endTime) {
+          const elapsedMs = now - startTime;
+          const elapsedSeconds = Math.floor(elapsedMs / 1000);
+          
+          const days = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((elapsedMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((elapsedMs % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((elapsedMs % (1000 * 60)) / 1000);
 
-        setTimeLeft({
-          days,
-          hours,
-          minutes,
-          seconds,
-          isExpired: true,
-          totalSeconds: 0,
-          phase: 'just-finished',
-          justFinished: false,
-          isRunning: true,
-          elapsedSeconds,
-        });
-        return;
-      }
+          return {
+            days,
+            hours,
+            minutes,
+            seconds,
+            isExpired: true,
+            totalSeconds: 0,
+            phase: 'just-finished',
+            justFinished: false,
+            isRunning: true,
+            elapsedSeconds,
+          };
+        }
 
-      // イベント終了後
-      if (endTime && now >= endTime) {
-        const elapsedMs = now - endTime;
-        const elapsedSeconds = Math.floor(elapsedMs / 1000);
-        
-        const days = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((elapsedMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((elapsedMs % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((elapsedMs % (1000 * 60)) / 1000);
+        // イベント終了後
+        if (endTime && now >= endTime) {
+          const elapsedMs = now - endTime;
+          const elapsedSeconds = Math.floor(elapsedMs / 1000);
+          
+          const days = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((elapsedMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((elapsedMs % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((elapsedMs % (1000 * 60)) / 1000);
 
-        setTimeLeft({
-          days,
-          hours,
-          minutes,
-          seconds,
+          return {
+            days,
+            hours,
+            minutes,
+            seconds,
+            isExpired: true,
+            totalSeconds: 0,
+            phase: 'just-finished',
+            justFinished: false,
+            isRunning: false,
+            elapsedSeconds,
+          };
+        }
+
+        // イベント開始したが終了日が設定されていない場合
+        return {
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
           isExpired: true,
           totalSeconds: 0,
           phase: 'just-finished',
           justFinished: false,
           isRunning: false,
-          elapsedSeconds,
-        });
-        return;
-      }
-
-      // イベント開始したが終了日が設定されていない場合
-      setTimeLeft({
-        days: 0,
-        hours: 0,
-        minutes: 0,
-        seconds: 0,
-        isExpired: true,
-        totalSeconds: 0,
-        phase: 'just-finished',
-        justFinished: false,
-        isRunning: false,
-        elapsedSeconds: now - startTime > 0 ? Math.floor((now - startTime) / 1000) : 0,
+          elapsedSeconds: now - startTime > 0 ? Math.floor((now - startTime) / 1000) : 0,
+        };
       });
     };
 
@@ -157,7 +156,7 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [startDate, endDate, onFinish, getPhase]);
+  }, [startDate, endDate, onFinish, getPhase, wasRunning]);
 
   return timeLeft;
 };
