@@ -28,7 +28,20 @@ const limiter = rateLimit({
 });
 
 app.use(helmet());
-app.use(cors());
+
+// CORS設定
+const corsOptions = {
+  origin: [
+    'https://countdownhub.jp',
+    'https://www.countdownhub.jp',
+    'http://localhost:3000', // 開発環境
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));

@@ -75,6 +75,7 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
 export const getEventById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    console.log(`Getting event by ID: ${id}`);
     
     const event = await prisma.event.findUnique({
       where: { id: Number(id) },
@@ -86,11 +87,14 @@ export const getEventById = async (req: Request, res: Response, next: NextFuncti
     });
 
     if (!event) {
+      console.log(`Event not found: ${id}`);
       throw createError('Event not found', 404);
     }
 
+    console.log(`Event found: ${event.title}`);
     res.json(event);
   } catch (error) {
+    console.error(`Error getting event ${id}:`, error);
     next(error);
   }
 };
