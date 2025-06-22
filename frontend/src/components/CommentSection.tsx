@@ -196,14 +196,14 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
-        <h3 className="font-semibold text-gray-700 text-xl flex-shrink-0">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
+        <h3 className="font-semibold text-gray-700 text-lg sm:text-xl flex-shrink-0">
           💬 コメント ({total}件)
         </h3>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
           {/* リアルタイム更新ステータス */}
-          <div className="flex items-center space-x-2 text-sm">
-            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isRealTimeEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}></div>
+          <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+            <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0 ${isRealTimeEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}></div>
             <span className="text-gray-600 whitespace-nowrap">
               {isRealTimeEnabled ? 'リアルタイム更新中' : '更新停止中'}
             </span>
@@ -217,12 +217,12 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
           {isAuthenticated ? (
             <button
               onClick={() => setShowForm(!showForm)}
-              className="bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium whitespace-nowrap"
+              className="bg-blue-500 text-white px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-blue-600 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
             >
               {showForm ? 'キャンセル' : 'コメント投稿'}
             </button>
           ) : (
-            <div className="text-sm text-gray-600">
+            <div className="text-xs sm:text-sm text-gray-600">
               <span className="block sm:inline">コメント投稿には</span>
               <Link to="/login" className="text-blue-600 font-medium hover:text-blue-800 underline">ログイン</Link>
               <span className="block sm:inline">が必要です</span>
@@ -233,12 +233,12 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
 
       {/* ソート選択 */}
       {total > 0 && (
-        <div className="flex justify-center sm:justify-end mb-4">
-          <div className="flex items-center space-x-2 text-sm">
+        <div className="flex justify-center sm:justify-end mb-3 sm:mb-4">
+          <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
             <span className="text-gray-600 whitespace-nowrap">並び順:</span>
             <button
               onClick={() => handleSortChange('desc')}
-              className={`px-3 py-1 rounded-md transition-colors whitespace-nowrap ${
+              className={`px-2 sm:px-3 py-1 rounded-md transition-colors whitespace-nowrap text-xs sm:text-sm ${
                 sortOrder === 'desc' 
                   ? 'bg-blue-500 text-white' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -248,7 +248,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
             </button>
             <button
               onClick={() => handleSortChange('asc')}
-              className={`px-3 py-1 rounded-md transition-colors whitespace-nowrap ${
+              className={`px-2 sm:px-3 py-1 rounded-md transition-colors whitespace-nowrap text-xs sm:text-sm ${
                 sortOrder === 'asc' 
                   ? 'bg-blue-500 text-white' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -306,13 +306,13 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
         <div className="space-y-4">
           {comments.map((comment) => (
             <div key={comment.id} className="border-b border-gray-200 pb-4 last:border-b-0">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
-                <div className="flex flex-col sm:flex-row sm:items-center">
-                  <span className="font-medium text-gray-900 mr-0 sm:mr-3">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-1 sm:gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center min-w-0">
+                  <span className="font-medium text-gray-900 mr-0 sm:mr-3 text-sm sm:text-base truncate">
                     {comment.author_name}
                   </span>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">
+                  <div className="flex items-center space-x-1 sm:space-x-2">
+                    <span className="text-xs sm:text-sm text-gray-500">
                       {formatDate(comment.created_at)}
                     </span>
                     {comment.updated_at && comment.updated_at !== comment.created_at && (
@@ -322,9 +322,9 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2 flex-shrink-0">
+                <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
                   {comment.is_reported && (
-                    <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full whitespace-nowrap">
+                    <span className="text-xs bg-red-100 text-red-600 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">
                       通報済み
                     </span>
                   )}
@@ -332,13 +332,13 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
                     <div className="flex space-x-1">
                       <button
                         onClick={() => handleEditStart(comment)}
-                        className="text-blue-600 hover:text-blue-800 text-sm underline whitespace-nowrap"
+                        className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm underline whitespace-nowrap"
                       >
                         編集
                       </button>
                       <button
                         onClick={() => handleDelete(comment.id)}
-                        className="text-red-600 hover:text-red-800 text-sm underline whitespace-nowrap"
+                        className="text-red-600 hover:text-red-800 text-xs sm:text-sm underline whitespace-nowrap"
                       >
                         削除
                       </button>

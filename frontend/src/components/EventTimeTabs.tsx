@@ -70,7 +70,7 @@ export const EventTimeTabs: React.FC<EventTimeTabsProps> = ({
   };
 
   const getTabStyle = (category: EventTimeCategory): string => {
-    const baseStyle = "relative px-3 sm:px-6 py-3 font-medium text-xs sm:text-sm transition-all duration-200 flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-2 border-b-2 min-w-0 flex-1 justify-center";
+    const baseStyle = "relative px-1 sm:px-3 lg:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 flex flex-col sm:flex-row items-center space-y-0.5 sm:space-y-0 sm:space-x-2 border-b-2 min-w-0 flex-1 justify-center";
     
     if (activeTab === category) {
       switch (category) {
@@ -101,9 +101,9 @@ export const EventTimeTabs: React.FC<EventTimeTabsProps> = ({
               onClick={() => handleTabChange(category)}
               className={getTabStyle(category)}
             >
-              <span className="truncate text-center leading-tight">{getEventTimeCategoryLabel(category)}</span>
+              <span className="truncate text-center leading-tight text-xs sm:text-sm">{getEventTimeCategoryLabel(category)}</span>
               <span className={`
-                px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold min-w-[18px] sm:min-w-[20px] h-4 sm:h-5 flex items-center justify-center
+                px-1 sm:px-1.5 lg:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold min-w-[16px] sm:min-w-[18px] lg:min-w-[20px] h-3.5 sm:h-4 lg:h-5 flex items-center justify-center
                 ${activeTab === category 
                   ? 'bg-white text-current shadow-sm' 
                   : 'bg-gray-100 text-gray-600'

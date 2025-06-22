@@ -106,6 +106,13 @@
 2. `.eslintrc.js` 設定確認
 3. `npm run lint:fix` で自動修正可能か確認
 
+**具体的なデバッグ記録 (2024-06-22)**:
+- **問題**: CI環境でReact Hook useEffect dependency警告がerror扱いされてビルド失敗
+- **エラー**: `React Hook useEffect has missing dependencies: 'timeLeft.isExpired' and 'wasRunning'`
+- **根本原因**: `useEffect`の依存配列から状態変数を削除したことで無限ループを防いだが、ESLintルールに違反
+- **解決策**: `setTimeLeft`を関数型更新(`prev => { ... }`)に変更し、必要な依存関係のみ追加
+- **教訓**: CI/CDでtreat-warnings-as-errorsが有効な場合、ESLint警告も修正必須
+
 ### ビルドサイズ問題
 **調査手順**:
 1. `npm run build` でビルドサイズ確認

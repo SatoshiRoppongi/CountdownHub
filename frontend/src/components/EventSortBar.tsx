@@ -34,10 +34,10 @@ export const EventSortBar: React.FC<EventSortBarProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 sm:p-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
         {/* 件数表示 */}
-        <div className="text-sm text-gray-600">
+        <div className="text-xs sm:text-sm text-gray-600">
           <span className="font-medium text-gray-900">{totalCount.toLocaleString()}</span>件のイベント
         </div>
 
@@ -45,14 +45,14 @@ export const EventSortBar: React.FC<EventSortBarProps> = ({
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors w-full sm:w-auto justify-between sm:justify-start"
+            className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors w-full sm:w-auto justify-between sm:justify-start"
           >
-            <div className="flex items-center space-x-2">
-              <span className="hidden sm:inline">並び順:</span>
-              <span className="text-blue-600 truncate">{getCurrentSortLabel()}</span>
+            <div className="flex items-center space-x-1 sm:space-x-2 min-w-0">
+              <span className="hidden lg:inline text-xs sm:text-sm">並び順:</span>
+              <span className="text-blue-600 truncate text-xs sm:text-sm">{getCurrentSortLabel()}</span>
             </div>
             <svg 
-              className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`}
+              className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`}
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -70,7 +70,7 @@ export const EventSortBar: React.FC<EventSortBarProps> = ({
                     key={option.value}
                     onClick={() => handleSortSelect(option.value)}
                     className={`
-                      w-full text-left px-4 py-2 text-sm transition-colors
+                      w-full text-left px-3 sm:px-4 py-2 text-xs sm:text-sm transition-colors
                       ${currentSort === option.value 
                         ? 'bg-blue-50 text-blue-600 font-medium' 
                         : 'text-gray-700 hover:bg-gray-50'
@@ -78,11 +78,11 @@ export const EventSortBar: React.FC<EventSortBarProps> = ({
                     `}
                   >
                     <span className="flex items-center space-x-2">
-                      <span>{option.icon}</span>
-                      <span>{option.label}</span>
+                      <span className="text-sm">{option.icon}</span>
+                      <span className="truncate">{option.label}</span>
                     </span>
                     {currentSort === option.value && (
-                      <svg className="inline w-4 h-4 ml-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="inline w-3 h-3 sm:w-4 sm:h-4 ml-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     )}
