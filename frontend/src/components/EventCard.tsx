@@ -61,7 +61,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, searchTerm }) => {
         `}>
           <CountdownTimer 
             targetDate={event.start_datetime}
-            endDate={event.end_datetime}
+            endDate={event.end_datetime || undefined}
             size="large"
             textColor="white"
             onFinish={handleEventFinish}

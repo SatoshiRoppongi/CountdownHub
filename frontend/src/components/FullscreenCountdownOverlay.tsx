@@ -12,7 +12,7 @@ export const FullscreenCountdownOverlay: React.FC<FullscreenCountdownOverlayProp
   eventTitle,
   onFinish
 }) => {
-  const { seconds, phase, justFinished } = useCountdown(targetDate, onFinish);
+  const { seconds, phase, justFinished } = useCountdown(targetDate, undefined, onFinish);
   const [showOverlay, setShowOverlay] = useState(false);
   const [overlayPhase, setOverlayPhase] = useState<'countdown' | 'celebration'>('countdown');
 

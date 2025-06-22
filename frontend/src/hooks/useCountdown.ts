@@ -79,7 +79,7 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
           isExpired: true,
           phase: 'just-finished',
           justFinished,
-          isRunning: !endTime || (endTime && now < endTime),
+          isRunning: endTime ? now < endTime : false,
         }));
 
         if (justFinished && onFinish) {
