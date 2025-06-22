@@ -299,7 +299,7 @@ export const getUserEvents = async (req: Request, res: Response) => {
 
     const events = await prisma.event.findMany({
       where: { 
-        created_by: userId 
+        user_id: userId 
       },
       include: {
         _count: {
