@@ -44,14 +44,21 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
 // OAuth設定状況確認
 router.get('/oauth-status', (req, res) => {
+  const googleConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  
   res.json({
     google: {
-      configured: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-      clientId: process.env.GOOGLE_CLIENT_ID ? `${process.env.GOOGLE_CLIENT_ID.slice(0, 10)}...` : null
+      configured: googleConfigured,
+      clientId: process.env.GOOGLE_CLIENT_ID ? `${process.env.GOOGLE_CLIENT_ID.slice(0, 10)}...` : null,
+      callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'not set',
+      message: googleConfigured 
+        ? 'Google OAuth is properly configured' 
+        : 'Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env file'
     },
     firebase: {
       configured: !!process.env.FIREBASE_PROJECT_ID
-    }
+    },
+    setup_guide: '/docs/google-oauth-setup.md'
   });
 });
 
