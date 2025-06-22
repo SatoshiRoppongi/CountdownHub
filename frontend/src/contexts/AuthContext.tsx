@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (response.ok) {
-        const userData = await response.json();
+        const { user: userData } = await response.json();
         setUser(userData);
       } else {
         // 無効なトークンの場合、削除

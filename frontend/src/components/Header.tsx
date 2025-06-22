@@ -110,9 +110,9 @@ export const Header: React.FC<HeaderProps> = ({
                     className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
                   >
                     <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                      {user.display_name?.charAt(0) || user.username.charAt(0)}
+                      {user.display_name?.charAt(0) || user.username?.charAt(0) || '?'}
                     </div>
-                    <span className="hidden md:block">{user.display_name || user.username}</span>
+                    <span className="hidden md:block">{user.display_name || user.username || 'ユーザー'}</span>
                     <svg className={`w-4 h-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
