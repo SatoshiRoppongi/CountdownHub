@@ -35,7 +35,7 @@ export const EventSortBar: React.FC<EventSortBarProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         {/* 件数表示 */}
         <div className="text-sm text-gray-600">
           <span className="font-medium text-gray-900">{totalCount.toLocaleString()}</span>件のイベント
@@ -45,12 +45,14 @@ export const EventSortBar: React.FC<EventSortBarProps> = ({
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors w-full sm:w-auto justify-between sm:justify-start"
           >
-            <span>並び順:</span>
-            <span className="text-blue-600">{getCurrentSortLabel()}</span>
+            <div className="flex items-center space-x-2">
+              <span className="hidden sm:inline">並び順:</span>
+              <span className="text-blue-600 truncate">{getCurrentSortLabel()}</span>
+            </div>
             <svg 
-              className={`w-4 h-4 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+              className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`}
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -61,7 +63,7 @@ export const EventSortBar: React.FC<EventSortBarProps> = ({
 
           {/* ドロップダウンメニュー */}
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+            <div className="absolute left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
               <div className="py-1">
                 {sortOptions.map((option) => (
                   <button

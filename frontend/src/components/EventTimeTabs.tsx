@@ -28,6 +28,22 @@ export const EventTimeTabs: React.FC<EventTimeTabsProps> = ({
   const [activeTab, setActiveTab] = useState<EventTimeCategory>('today');
   const [sortOption, setSortOption] = useState<SortOption>('start_datetime_asc');
   
+  // タブごとのデフォルトソート
+  const getDefaultSort = (tab: EventTimeCategory): SortOption => {
+    switch (tab) {
+      case 'ended':
+        return 'start_datetime_desc'; // 終了済みは終了が新しい順（最近終了したものから）
+      default:
+        return 'start_datetime_asc'; // その他は開催日時昇順
+    }
+  };
+
+  // タブ変更時にデフォルトソートに戻す
+  const handleTabChange = (tab: EventTimeCategory) => {
+    setActiveTab(tab);
+    setSortOption(getDefaultSort(tab));
+  };
+  
   const categorizedEvents = useMemo(() => 
     categorizeEventsByTime(events, sortOption), 
     [events, sortOption]
@@ -54,7 +70,7 @@ export const EventTimeTabs: React.FC<EventTimeTabsProps> = ({
   };
 
   const getTabStyle = (category: EventTimeCategory): string => {
-    const baseStyle = "relative px-6 py-3 font-medium text-sm transition-all duration-200 flex items-center space-x-2 border-b-2 min-w-0 flex-1 justify-center";
+    const baseStyle = "relative px-3 sm:px-6 py-3 font-medium text-xs sm:text-sm transition-all duration-200 flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-2 border-b-2 min-w-0 flex-1 justify-center";
     
     if (activeTab === category) {
       switch (category) {
@@ -82,12 +98,12 @@ export const EventTimeTabs: React.FC<EventTimeTabsProps> = ({
           {tabs.map(category => (
             <button
               key={category}
-              onClick={() => setActiveTab(category)}
+              onClick={() => handleTabChange(category)}
               className={getTabStyle(category)}
             >
-              <span className="truncate">{getEventTimeCategoryLabel(category)}</span>
+              <span className="truncate text-center leading-tight">{getEventTimeCategoryLabel(category)}</span>
               <span className={`
-                px-2 py-1 rounded-full text-xs font-bold min-w-[20px] h-5 flex items-center justify-center
+                px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold min-w-[18px] sm:min-w-[20px] h-4 sm:h-5 flex items-center justify-center
                 ${activeTab === category 
                   ? 'bg-white text-current shadow-sm' 
                   : 'bg-gray-100 text-gray-600'

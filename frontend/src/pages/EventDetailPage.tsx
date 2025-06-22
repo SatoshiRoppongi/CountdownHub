@@ -198,6 +198,25 @@ export const EventDetailPage: React.FC = () => {
             </div>
           </div>
 
+          {/* 統計情報 */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <svg className="h-5 w-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
+              </svg>
+              <span className="font-medium text-gray-900">{event._count.favorites || 0}</span>
+              <span className="text-gray-600 text-sm">お気に入り</span>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <svg className="h-5 w-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium text-gray-900">{event._count.comments}</span>
+              <span className="text-gray-600 text-sm">コメント</span>
+            </div>
+          </div>
+
           {/* 基本情報 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="space-y-4">
