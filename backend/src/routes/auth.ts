@@ -49,7 +49,8 @@ router.get('/oauth-status', (req, res) => {
   res.json({
     google: {
       configured: googleConfigured,
-      clientId: process.env.GOOGLE_CLIENT_ID ? `${process.env.GOOGLE_CLIENT_ID.slice(0, 10)}...` : null,
+      clientId: process.env.GOOGLE_CLIENT_ID || 'not set',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ? '***configured***' : 'not set',
       callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'not set',
       message: googleConfigured 
         ? 'Google OAuth is properly configured' 
@@ -58,7 +59,25 @@ router.get('/oauth-status', (req, res) => {
     firebase: {
       configured: !!process.env.FIREBASE_PROJECT_ID
     },
-    setup_guide: '/docs/google-oauth-setup.md'
+    setup_guide: '/docs/google-oauth-setup.md',
+    troubleshooting_guide: '/docs/google-oauth-troubleshooting.md'
+  });
+});
+
+// Google OAuth デバッグ用エンドポイント
+router.get('/google/debug', (req, res) => {
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `client_id=${process.env.GOOGLE_CLIENT_ID}&` +
+    `redirect_uri=${encodeURIComponent(process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/api/auth/google/callback')}&` +
+    `response_type=code&` +
+    `scope=profile email&` +
+    `access_type=offline`;
+    
+  res.json({
+    authUrl,
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    callbackUrl: process.env.GOOGLE_CALLBACK_URL,
+    note: 'このURLでGoogle認証をテストできます'
   });
 });
 
