@@ -40,6 +40,31 @@ export function categorizeEventsByTime(events: Event[]): CategorizedEvents {
     }
   });
 
+  // 各カテゴリーの並び順を設定
+  // 当日開催: 開始時間順
+  categorized.today.sort((a, b) => 
+    new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime()
+  );
+
+  // 今後開催: 開始時間順
+  categorized.upcoming.sort((a, b) => 
+    new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime()
+  );
+
+  // 開催中: 終了時間順（終了が近いものから）
+  categorized.ongoing.sort((a, b) => {
+    const endTimeA = a.end_datetime ? new Date(a.end_datetime).getTime() : Number.MAX_SAFE_INTEGER;
+    const endTimeB = b.end_datetime ? new Date(b.end_datetime).getTime() : Number.MAX_SAFE_INTEGER;
+    return endTimeA - endTimeB;
+  });
+
+  // 終了済み: 終了からの経過時間の短い順（最近終了したものから）
+  categorized.ended.sort((a, b) => {
+    const endTimeA = a.end_datetime ? new Date(a.end_datetime).getTime() : new Date(a.start_datetime).getTime();
+    const endTimeB = b.end_datetime ? new Date(b.end_datetime).getTime() : new Date(b.start_datetime).getTime();
+    return endTimeB - endTimeA; // 降順（新しい終了時間から）
+  });
+
   return categorized;
 }
 

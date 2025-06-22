@@ -90,8 +90,51 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
     ) : null;
   }
 
-  // 開催中イベント（カウントアップ表示）
-  if (isExpired && isRunning && !showCelebration) {
+  // 開催中イベント（二重表示：開始からのカウントアップ＋終了までのカウントダウン）
+  if (isExpired && isRunning && !showCelebration && endDate) {
+    const now = new Date().getTime();
+    const startTime = new Date(targetDate).getTime();
+    const endTime = new Date(endDate).getTime();
+    
+    // 開始からの経過時間
+    const elapsedMs = now - startTime;
+    const elapsedDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+    const elapsedHours = Math.floor((elapsedMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const elapsedMinutes = Math.floor((elapsedMs % (1000 * 60 * 60)) / (1000 * 60));
+    const elapsedSeconds = Math.floor((elapsedMs % (1000 * 60)) / 1000);
+    
+    // 終了までの残り時間
+    const remainingMs = endTime - now;
+    const remainingDays = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+    const remainingHours = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const remainingMinutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+    const remainingSecondsValue = Math.floor((remainingMs % (1000 * 60)) / 1000);
+
+    return showExpired ? (
+      <div className={`
+        rounded-lg border-2 font-mono font-bold text-center transition-all duration-300
+        ${textColor === 'white' ? 'text-white border-white/30' : 'text-green-700 border-green-300 bg-green-50'}
+        ${containerClasses[size]}
+      `}>
+        <div className="flex flex-col space-y-1">
+          <div className={`${sizeClasses[size]} leading-tight text-green-600`}>
+            ⏰ 開催中
+          </div>
+          <div className="text-xs font-normal space-y-1">
+            <div className="text-blue-600">
+              📈 開始から: {formatElapsedTime(elapsedDays, elapsedHours, elapsedMinutes, elapsedSeconds)}
+            </div>
+            <div className="text-orange-600">
+              📉 終了まで: {formatElapsedTime(remainingDays, remainingHours, remainingMinutes, remainingSecondsValue)}
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : null;
+  }
+
+  // 開催中イベント（終了日時なしの場合は従来通り）
+  if (isExpired && isRunning && !showCelebration && !endDate) {
     return showExpired ? (
       <div className={`
         rounded-lg border-2 font-mono font-bold text-center transition-all duration-300
@@ -109,6 +152,11 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
   const colorClasses = getUrgencyColor(urgencyLevel);
   
   const getAnimationClasses = (): string => {
+    // 開催中イベントはアニメーションなし
+    if (isExpired && isRunning) {
+      return '';
+    }
+    
     switch (phase) {
       case 'final-ten':
         return 'animate-bounce text-red-600 scale-125 drop-shadow-lg';

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useEvents } from '../hooks/useEvents';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useInfiniteEvents } from '../hooks/useInfiniteEvents';
 import { EventTimeTabs } from '../components/EventTimeTabs';
 import { AdvancedSearchPanel } from '../components/AdvancedSearchPanel';
 import { SearchHistoryPanel } from '../components/SearchHistoryPanel';
@@ -26,7 +26,6 @@ export const EventListPage: React.FC<EventListPageProps> = ({
     sort_by: 'start_datetime',
     order: 'asc'
   });
-  const [page, setPage] = useState(1);
   const [showAdvancedPanel, setShowAdvancedPanel] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const { addToHistory } = useSearchHistory();
@@ -54,22 +53,39 @@ export const EventListPage: React.FC<EventListPageProps> = ({
 
   const handleAdvancedSearch = (newFilters: EventFilters) => {
     setFilters(newFilters);
-    setPage(1); // ページをリセット
   };
 
   const handleHistorySearch = (newFilters: EventFilters) => {
     setFilters(newFilters);
-    setPage(1);
   };
 
-  const { data, isLoading, error } = useEvents({ ...filters, page, limit: 60 });
+  const { 
+    data, 
+    isLoading, 
+    error, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage 
+  } = useInfiniteEvents({ ...filters, limit: 20 });
+
+  // 全ページのイベントをフラット化
+  const allEvents = useMemo(() => {
+    if (!data?.pages) return [];
+    return data.pages.flatMap(page => page.events);
+  }, [data]);
+
+  // 合計イベント数を計算
+  const totalEvents = useMemo(() => {
+    if (!data?.pages || data.pages.length === 0) return 0;
+    return data.pages[0].pagination?.total ?? 0;
+  }, [data]);
 
   // 検索結果が取得されたら履歴に追加
   useEffect(() => {
-    if (data && (filters.search || filters.tags?.length || filters.venue_type || filters.dateRange)) {
-      addToHistory(filters, data.pagination.total);
+    if (totalEvents > 0 && (filters.search || filters.tags?.length || filters.venue_type || filters.dateRange)) {
+      addToHistory(filters, totalEvents);
     }
-  }, [data, filters, addToHistory]);
+  }, [totalEvents, filters, addToHistory]);
 
   const handleClearFilter = (filterType: string, value?: string) => {
     setFilters(prev => {
@@ -139,7 +155,7 @@ export const EventListPage: React.FC<EventListPageProps> = ({
 
       {/* 検索結果サマリー */}
       <SearchResultSummary
-        totalResults={data?.pagination?.total || 0}
+        totalResults={totalEvents}
         searchTerm={filters.search}
         appliedFilters={{
           tags: filters.tags,
@@ -151,10 +167,13 @@ export const EventListPage: React.FC<EventListPageProps> = ({
       />
 
       {/* イベント時間軸タブ */}
-      {data && data.events.length > 0 ? (
+      {allEvents.length > 0 ? (
         <EventTimeTabs 
-          events={data.events} 
+          events={allEvents} 
           searchTerm={filters.search}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={fetchNextPage}
         />
       ) : (
         <div className="text-center py-12 bg-white rounded-lg shadow-md">
