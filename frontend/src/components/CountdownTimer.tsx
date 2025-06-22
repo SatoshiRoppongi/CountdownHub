@@ -3,6 +3,7 @@ import { useCountdown, getUrgencyLevel, getUrgencyColor } from '../hooks/useCoun
 
 interface CountdownTimerProps {
   targetDate: string;
+  endDate?: string;
   size?: 'small' | 'medium' | 'large';
   showExpired?: boolean;
   textColor?: 'white' | 'default';
@@ -11,13 +12,25 @@ interface CountdownTimerProps {
 
 export const CountdownTimer: React.FC<CountdownTimerProps> = ({ 
   targetDate, 
+  endDate,
   size = 'medium',
   showExpired = true,
   textColor = 'default',
   onFinish
 }) => {
-  const { days, hours, minutes, seconds, isExpired, totalSeconds, phase, justFinished } = useCountdown(targetDate, onFinish);
+  const { days, hours, minutes, seconds, isExpired, totalSeconds, phase, justFinished, isRunning } = useCountdown(targetDate, endDate, onFinish);
   const [showCelebration, setShowCelebration] = useState(false);
+
+  // 経過時間をフォーマットする関数
+  const formatElapsedTime = (days: number, hours: number, minutes: number, seconds: number) => {
+    if (days > 0) {
+      return `${days}日 ${hours}時間 ${minutes}分 ${seconds}秒`;
+    } else if (hours > 0) {
+      return `${hours}時間 ${minutes}分 ${seconds}秒`;
+    } else {
+      return `${minutes}分 ${seconds}秒`;
+    }
+  };
 
   // 0秒になった時のお祝いアニメーション
   useEffect(() => {
@@ -28,10 +41,20 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
     }
   }, [justFinished]);
   
-  if (isExpired && !showCelebration) {
+  // 終了済みイベント（カウントアップ表示）
+  if (isExpired && !isRunning && !showCelebration) {
     return showExpired ? (
-      <div className="text-gray-500 font-medium">
-        🎉 開催開始！
+      <div className="text-white font-medium">
+        終了から {formatElapsedTime(days, hours, minutes, seconds)}
+      </div>
+    ) : null;
+  }
+
+  // 開催中イベント（カウントアップ表示）
+  if (isExpired && isRunning && !showCelebration) {
+    return showExpired ? (
+      <div className="text-white font-medium">
+        開催中 {formatElapsedTime(days, hours, minutes, seconds)}
       </div>
     ) : null;
   }
