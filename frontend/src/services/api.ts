@@ -12,7 +12,7 @@ const api = axios.create({
 
 // 認証ヘッダーの自動送信
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('countdown_hub_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

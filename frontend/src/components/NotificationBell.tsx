@@ -121,8 +121,14 @@ export const NotificationBell: React.FC = () => {
       const response = await notificationAPI.getUserNotifications({ limit: 10 });
       setNotifications(response.notifications);
       setUnreadCount(response.unreadCount);
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
+    } catch (error: any) {
+      // 通知機能が未実装の場合（404, 401）はサイレントに処理
+      if (error?.response?.status === 401 || error?.response?.status === 404) {
+        setNotifications([]);
+        setUnreadCount(0);
+      } else {
+        console.error('Failed to fetch notifications:', error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -132,8 +138,13 @@ export const NotificationBell: React.FC = () => {
     try {
       const response = await notificationAPI.getUnreadCount();
       setUnreadCount(response.unreadCount);
-    } catch (error) {
-      console.error('Failed to fetch unread count:', error);
+    } catch (error: any) {
+      // 通知機能が未実装の場合（404, 401）はサイレントに処理
+      if (error?.response?.status === 401 || error?.response?.status === 404) {
+        setUnreadCount(0);
+      } else {
+        console.error('Failed to fetch unread count:', error);
+      }
     }
   };
 
