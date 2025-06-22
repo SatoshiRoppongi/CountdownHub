@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Event } from '../types';
+import { Event, SortOption } from '../types';
 import { EventCard } from './EventCard';
+import { EventSortBar } from './EventSortBar';
 import { 
   categorizeEventsByTime, 
   EventTimeCategory, 
@@ -25,7 +26,12 @@ export const EventTimeTabs: React.FC<EventTimeTabsProps> = ({
   onLoadMore 
 }) => {
   const [activeTab, setActiveTab] = useState<EventTimeCategory>('today');
-  const categorizedEvents = useMemo(() => categorizeEventsByTime(events), [events]);
+  const [sortOption, setSortOption] = useState<SortOption>('start_datetime_asc');
+  
+  const categorizedEvents = useMemo(() => 
+    categorizeEventsByTime(events, sortOption), 
+    [events, sortOption]
+  );
   
   // 無限スクロール用のIntersection Observer
   const { ref: loadMoreRef, isIntersecting } = useIntersectionObserver({
@@ -48,22 +54,22 @@ export const EventTimeTabs: React.FC<EventTimeTabsProps> = ({
   };
 
   const getTabStyle = (category: EventTimeCategory): string => {
-    const baseStyle = "px-6 py-3 font-medium text-sm rounded-lg transition-all duration-200 flex items-center space-x-2";
+    const baseStyle = "relative px-6 py-3 font-medium text-sm transition-all duration-200 flex items-center space-x-2 border-b-2 min-w-0 flex-1 justify-center";
     
     if (activeTab === category) {
       switch (category) {
         case 'today':
-          return `${baseStyle} bg-red-500 text-white shadow-lg`;
+          return `${baseStyle} text-red-600 border-red-500 bg-red-50`;
         case 'upcoming':
-          return `${baseStyle} bg-blue-500 text-white shadow-lg`;
+          return `${baseStyle} text-blue-600 border-blue-500 bg-blue-50`;
         case 'ongoing':
-          return `${baseStyle} bg-green-500 text-white shadow-lg`;
+          return `${baseStyle} text-green-600 border-green-500 bg-green-50`;
         case 'ended':
-          return `${baseStyle} bg-gray-500 text-white shadow-lg`;
+          return `${baseStyle} text-gray-600 border-gray-500 bg-gray-50`;
       }
     }
     
-    return `${baseStyle} bg-white text-gray-700 border border-gray-300 hover:bg-gray-50`;
+    return `${baseStyle} text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300`;
   };
 
   const activeEvents = categorizedEvents[activeTab];
@@ -71,16 +77,22 @@ export const EventTimeTabs: React.FC<EventTimeTabsProps> = ({
   return (
     <div className="space-y-6">
       {/* タブナビゲーション */}
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <div className="flex flex-wrap gap-2 mb-4">
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="flex border-b border-gray-200">
           {tabs.map(category => (
             <button
               key={category}
               onClick={() => setActiveTab(category)}
               className={getTabStyle(category)}
             >
-              <span>{getEventTimeCategoryLabel(category)}</span>
-              <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-bold">
+              <span className="truncate">{getEventTimeCategoryLabel(category)}</span>
+              <span className={`
+                px-2 py-1 rounded-full text-xs font-bold min-w-[20px] h-5 flex items-center justify-center
+                ${activeTab === category 
+                  ? 'bg-white text-current shadow-sm' 
+                  : 'bg-gray-100 text-gray-600'
+                }
+              `}>
                 {getTabCount(category)}
               </span>
             </button>
@@ -88,10 +100,19 @@ export const EventTimeTabs: React.FC<EventTimeTabsProps> = ({
         </div>
         
         {/* アクティブタブの説明 */}
-        <div className="text-gray-600 text-sm">
-          {getEventTimeCategoryDescription(activeTab)}
+        <div className="p-4 bg-gray-50 border-t">
+          <div className="text-gray-600 text-sm">
+            {getEventTimeCategoryDescription(activeTab)}
+          </div>
         </div>
       </div>
+
+      {/* ソートバー */}
+      <EventSortBar
+        currentSort={sortOption}
+        onSortChange={setSortOption}
+        totalCount={activeEvents.length}
+      />
 
       {/* イベント一覧 */}
       {activeEvents.length > 0 ? (
