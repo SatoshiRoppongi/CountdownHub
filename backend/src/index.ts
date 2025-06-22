@@ -11,6 +11,7 @@ import eventRoutes from './routes/events';
 import commentRoutes from './routes/comments';
 import adminRoutes from './routes/admin';
 import authRoutes from './routes/auth';
+import usersRoutes from './routes/users';
 import favoriteRoutes from './routes/favorites';
 import notificationRoutes from './routes/notifications';
 import firebaseAuthRoutes from './routes/firebaseAuth';
@@ -50,6 +51,7 @@ app.use(logger);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', firebaseAuthRoutes);
+app.use('/api/users', usersRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/admin', adminRoutes);

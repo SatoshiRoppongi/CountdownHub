@@ -18,7 +18,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
   const { user, isAuthenticated } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<CommentFormData>({
-    author_name: '',
+    author_name: user?.display_name || user?.username || '',
     content: '',
   });
   const [showForm, setShowForm] = useState(false);
@@ -72,6 +72,16 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
     };
   }, []);
 
+  // ユーザー情報が変更された際にフォームを更新
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        author_name: user.display_name || user.username || ''
+      }));
+    }
+  }, [user]);
+
   // コメント投稿
   const createCommentMutation = useMutation({
     mutationFn: (commentData: CommentFormData) => 
@@ -80,7 +90,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['comments', eventId] });
       queryClient.invalidateQueries({ queryKey: ['event', eventId] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      setFormData({ author_name: '', content: '' });
+      setFormData({ author_name: user?.display_name || user?.username || '', content: '' });
       setShowForm(false);
       setIsSubmitting(false);
     },

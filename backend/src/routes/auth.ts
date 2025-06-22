@@ -3,6 +3,9 @@ import {
   register, 
   login, 
   getProfile, 
+  updateProfile,
+  getUserEvents,
+  getUserComments,
   logout,
   googleAuth,
   googleCallback,
@@ -18,6 +21,7 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/logout', logout);
 router.get('/profile', authenticateToken, getProfile);
+router.patch('/profile', authenticateToken, updateProfile);
 
 // Google OAuth ルート (環境変数が設定されている場合のみ)
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {

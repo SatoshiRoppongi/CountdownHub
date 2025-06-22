@@ -234,6 +234,129 @@ export const getProfile = async (req: Request, res: Response) => {
   }
 };
 
+// プロフィール更新
+export const updateProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: '認証が必要です' });
+    }
+
+    const { display_name } = req.body;
+
+    if (!display_name || display_name.trim() === '') {
+      return res.status(400).json({ error: 'ニックネームを入力してください' });
+    }
+
+    // ユーザー情報を更新
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        display_name: display_name.trim(),
+        updated_at: new Date()
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        display_name: true,
+        avatar_url: true,
+        created_at: true
+      }
+    });
+
+    // ユーザーのすべてのコメントの表示名も更新
+    await prisma.comment.updateMany({
+      where: { user_id: userId },
+      data: {
+        author_name: display_name.trim(),
+        updated_at: new Date()
+      }
+    });
+
+    res.json({
+      message: 'プロフィールを更新しました',
+      user: updatedUser
+    });
+
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      error: 'プロフィール更新に失敗しました'
+    });
+  }
+};
+
+// ユーザーのイベント一覧取得
+export const getUserEvents = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: '認証が必要です' });
+    }
+
+    const events = await prisma.event.findMany({
+      where: { 
+        created_by: userId 
+      },
+      include: {
+        _count: {
+          select: { comments: true }
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+
+    res.json({ events });
+
+  } catch (error) {
+    console.error('Get user events error:', error);
+    res.status(500).json({
+      error: 'イベント取得に失敗しました'
+    });
+  }
+};
+
+// ユーザーのコメント一覧取得
+export const getUserComments = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: '認証が必要です' });
+    }
+
+    const comments = await prisma.comment.findMany({
+      where: { 
+        user_id: userId 
+      },
+      include: {
+        event: {
+          select: {
+            id: true,
+            title: true
+          }
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+
+    res.json({ comments });
+
+  } catch (error) {
+    console.error('Get user comments error:', error);
+    res.status(500).json({
+      error: 'コメント取得に失敗しました'
+    });
+  }
+};
+
 // ログアウト（トークン無効化は実装しないが、フロントエンドでトークンを削除）
 export const logout = async (req: Request, res: Response) => {
   res.json({
