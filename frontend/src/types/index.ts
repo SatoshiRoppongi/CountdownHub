@@ -41,11 +41,19 @@ export interface EventsResponse {
   };
 }
 
+export type SortOption = 
+  | 'start_datetime_asc'   // 開催日時昇順
+  | 'start_datetime_desc'  // 開催日時降順
+  | 'created_at_asc'       // 作成日時昇順
+  | 'created_at_desc'      // 作成日時降順
+  | 'comments_desc'        // コメント数順
+  | 'favorites_desc';      // お気に入り数順
+
 export interface EventFilters {
   search?: string;
   tags?: string[];
   venue_type?: 'online' | 'offline' | 'hybrid';
-  sort_by?: 'start_datetime' | 'created_at' | 'comments';
+  sort_by?: 'start_datetime' | 'created_at' | 'comments' | 'favorites';
   order?: 'asc' | 'desc';
   dateRange?: {
     start_date: string;
