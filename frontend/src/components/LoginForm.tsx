@@ -50,10 +50,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
   };
 
   const handleSocialLogin = (provider: string) => {
-    // リダイレクト先を保存
-    if (onSuccess) {
-      sessionStorage.setItem('auth_redirect', window.location.pathname);
-    }
+    // 認証ページからのソーシャルログインの場合はホームページにリダイレクト
+    sessionStorage.setItem('auth_redirect', '/');
     startSocialLogin(provider);
   };
 

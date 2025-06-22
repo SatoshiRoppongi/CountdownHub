@@ -62,7 +62,11 @@ export const AuthCallbackPage: React.FC = () => {
             });
             
             // リダイレクト先を取得（デフォルトはホーム）
-            const from = sessionStorage.getItem('auth_redirect') || '/';
+            let from = sessionStorage.getItem('auth_redirect') || '/';
+            // 認証ページからの場合は強制的にホームにリダイレクト
+            if (from === '/auth') {
+              from = '/';
+            }
             sessionStorage.removeItem('auth_redirect');
             navigate(from, { replace: true });
           } else {
