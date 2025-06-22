@@ -170,28 +170,30 @@ export const EventDetailPage: React.FC = () => {
 
         {/* イベント情報 */}
         <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
               {event.title}
             </h1>
             
             {/* アクションボタン */}
-            <div className="flex gap-2">
+            <div className="flex gap-1 sm:gap-2 flex-shrink-0">
               <FavoriteButton eventId={eventId} size="medium" />
               
               {isOwner && (
                 <>
                   <button
                     onClick={handleEditEvent}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
                   >
-                    ✏️ 編集
+                    <span className="hidden sm:inline">✏️ 編集</span>
+                    <span className="sm:hidden">✏️</span>
                   </button>
                   <button
                     onClick={handleDeleteEvent}
-                    className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                    className="px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 bg-red-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap"
                   >
-                    🗑️ 削除
+                    <span className="hidden sm:inline">🗑️ 削除</span>
+                    <span className="sm:hidden">🗑️</span>
                   </button>
                 </>
               )}
@@ -199,21 +201,21 @@ export const EventDetailPage: React.FC = () => {
           </div>
 
           {/* 統計情報 */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center space-x-2">
-              <svg className="h-5 w-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="h-4 w-4 sm:h-5 sm:w-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
               </svg>
-              <span className="font-medium text-gray-900">{event._count.favorites || 0}</span>
-              <span className="text-gray-600 text-sm">お気に入り</span>
+              <span className="font-medium text-gray-900 text-sm sm:text-base">{event._count.favorites || 0}</span>
+              <span className="text-gray-600 text-xs sm:text-sm">お気に入り</span>
             </div>
             
             <div className="flex items-center space-x-2">
-              <svg className="h-5 w-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
               </svg>
-              <span className="font-medium text-gray-900">{event._count.comments}</span>
-              <span className="text-gray-600 text-sm">コメント</span>
+              <span className="font-medium text-gray-900 text-sm sm:text-base">{event._count.comments}</span>
+              <span className="text-gray-600 text-xs sm:text-sm">コメント</span>
             </div>
           </div>
 

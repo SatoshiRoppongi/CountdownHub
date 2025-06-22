@@ -55,13 +55,13 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-white shadow-md border-b">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+      <div className="container mx-auto px-2 sm:px-4">
+        <div className="flex items-center justify-between h-14 sm:h-16">
           {/* ロゴ・サイト名 */}
-          <div className="flex items-center flex-shrink-0">
-            <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <span className="text-2xl">⏰</span>
-              <span className="text-lg sm:text-xl font-bold text-gray-900 whitespace-nowrap">カウントダウンハブ</span>
+          <div className="flex items-center flex-shrink-0 min-w-0">
+            <Link to="/" className="flex items-center space-x-1 sm:space-x-2 hover:opacity-80 transition-opacity">
+              <span className="text-xl sm:text-2xl flex-shrink-0">⏰</span>
+              <span className="text-sm sm:text-lg lg:text-xl font-bold text-gray-900 whitespace-nowrap truncate">カウントダウンハブ</span>
             </Link>
           </div>
 
@@ -108,28 +108,28 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* モバイル検索アイコン */}
-          <div className="lg:hidden flex items-center">
+          <div className="lg:hidden flex items-center flex-shrink-0">
             <button
               onClick={() => setIsMobileSearchOpen(true)}
-              className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+              className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 transition-colors"
               title="検索"
             >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </button>
           </div>
 
           {/* ナビゲーションメニュー */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-4 flex-shrink-0">
             {user ? (
               <>
                 <Link
                   to="/register"
-                  className="bg-blue-500 text-white px-2 sm:px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm sm:text-base whitespace-nowrap"
+                  className="bg-blue-500 text-white px-1.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-xs sm:text-sm lg:text-base whitespace-nowrap"
                 >
-                  <span className="hidden sm:inline">+ イベント登録</span>
-                  <span className="sm:hidden">登録</span>
+                  <span className="hidden lg:inline">+ イベント登録</span>
+                  <span className="lg:hidden">登録</span>
                 </Link>
                 
                 {/* 通知ベル */}
@@ -141,11 +141,11 @@ export const Header: React.FC<HeaderProps> = ({
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
                   >
-                    <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs sm:text-sm font-medium flex-shrink-0">
                       {user.display_name?.charAt(0) || user.username?.charAt(0) || '?'}
                     </div>
-                    <span className="hidden md:block">{user.display_name || user.username || 'ユーザー'}</span>
-                    <svg className={`w-4 h-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span className="hidden lg:block text-sm truncate max-w-20">{user.display_name || user.username || 'ユーザー'}</span>
+                    <svg className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform flex-shrink-0 ${isUserMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
@@ -186,16 +186,16 @@ export const Header: React.FC<HeaderProps> = ({
               <>
                 <Link
                   to="/auth"
-                  className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm sm:text-base"
+                  className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-xs sm:text-sm lg:text-base whitespace-nowrap"
                 >
                   ログイン
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-blue-500 text-white px-2 sm:px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm sm:text-base whitespace-nowrap"
+                  className="bg-blue-500 text-white px-1.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-xs sm:text-sm lg:text-base whitespace-nowrap"
                 >
-                  <span className="hidden sm:inline">+ イベント登録</span>
-                  <span className="sm:hidden">登録</span>
+                  <span className="hidden lg:inline">+ イベント登録</span>
+                  <span className="lg:hidden">登録</span>
                 </Link>
               </>
             )}
