@@ -122,6 +122,7 @@ export const EventDetailPage: React.FC = () => {
       {/* Sticky Header */}
       <StickyCountdownHeader
         targetDate={event.start_datetime}
+        endDate={event.end_datetime || undefined}
         eventTitle={event.title}
         onFinish={handleEventFinish}
       />
@@ -129,6 +130,7 @@ export const EventDetailPage: React.FC = () => {
       {/* Fullscreen Countdown Overlay */}
       <FullscreenCountdownOverlay
         targetDate={event.start_datetime}
+        endDate={event.end_datetime || undefined}
         eventTitle={event.title}
         onFinish={handleEventFinish}
       />
@@ -159,7 +161,8 @@ export const EventDetailPage: React.FC = () => {
         {/* カウントダウンタイマー */}
         <div id="main-countdown-timer" className="mb-8 text-center">
           <CountdownTimer 
-            targetDate={event.start_datetime} 
+            targetDate={event.start_datetime}
+            endDate={event.end_datetime || undefined}
             size="large"
             onFinish={handleEventFinish}
           />
@@ -274,14 +277,9 @@ export const EventDetailPage: React.FC = () => {
           )}
 
           {/* メタ情報 */}
-          <div className="pt-6 border-t border-gray-200 text-sm text-gray-500">
-            <div className="flex justify-between items-center">
-              <div>
-                💬 {event._count.comments}件のコメント
-              </div>
-              <div>
-                作成日: {new Date(event.created_at).toLocaleDateString('ja-JP')}
-              </div>
+          <div className="pt-6 text-sm text-gray-500">
+            <div className="text-right">
+              作成日: {new Date(event.created_at).toLocaleDateString('ja-JP')}
             </div>
           </div>
         </div>

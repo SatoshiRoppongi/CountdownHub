@@ -86,11 +86,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
         formData.password,
         formData.displayName || undefined
       );
-      showToast({
-        type: 'success',
-        title: '登録成功',
-        message: 'アカウントを作成しました'
-      });
       onSuccess?.();
     } catch (error) {
       console.error('Registration error:', error);

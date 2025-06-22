@@ -3,6 +3,9 @@ import {
   register, 
   login, 
   getProfile, 
+  updateProfile,
+  getUserEvents,
+  getUserComments,
   logout,
   googleAuth,
   googleCallback,
@@ -18,6 +21,9 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/logout', logout);
 router.get('/profile', authenticateToken, getProfile);
+router.patch('/profile', authenticateToken, updateProfile);
+router.get('/profile/events', authenticateToken, getUserEvents);
+router.get('/profile/comments', authenticateToken, getUserComments);
 
 // Google OAuth ルート (環境変数が設定されている場合のみ)
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -38,14 +44,40 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
 // OAuth設定状況確認
 router.get('/oauth-status', (req, res) => {
+  const googleConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  
   res.json({
     google: {
-      configured: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-      clientId: process.env.GOOGLE_CLIENT_ID ? `${process.env.GOOGLE_CLIENT_ID.slice(0, 10)}...` : null
+      configured: googleConfigured,
+      clientId: process.env.GOOGLE_CLIENT_ID || 'not set',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ? '***configured***' : 'not set',
+      callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'not set',
+      message: googleConfigured 
+        ? 'Google OAuth is properly configured' 
+        : 'Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env file'
     },
     firebase: {
       configured: !!process.env.FIREBASE_PROJECT_ID
-    }
+    },
+    setup_guide: '/docs/google-oauth-setup.md',
+    troubleshooting_guide: '/docs/google-oauth-troubleshooting.md'
+  });
+});
+
+// Google OAuth デバッグ用エンドポイント
+router.get('/google/debug', (req, res) => {
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `client_id=${process.env.GOOGLE_CLIENT_ID}&` +
+    `redirect_uri=${encodeURIComponent(process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/api/auth/google/callback')}&` +
+    `response_type=code&` +
+    `scope=profile email&` +
+    `access_type=offline`;
+    
+  res.json({
+    authUrl,
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    callbackUrl: process.env.GOOGLE_CALLBACK_URL,
+    note: 'このURLでGoogle認証をテストできます'
   });
 });
 

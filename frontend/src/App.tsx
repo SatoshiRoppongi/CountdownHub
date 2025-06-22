@@ -11,6 +11,7 @@ import { EventRegistrationPage } from './pages/EventRegistrationPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AuthPage } from './pages/AuthPage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { PrivateRoute } from './components/PrivateRoute';
 
 function AppContent() {
@@ -55,6 +56,7 @@ function AppContent() {
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/register" element={<PrivateRoute><EventRegistrationPage /></PrivateRoute>} />
           <Route path="/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
         </Routes>

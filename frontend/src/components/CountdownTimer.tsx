@@ -41,40 +41,6 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
     }
   }, [justFinished]);
   
-  // 終了済みイベント（カウントアップ表示）
-  if (isExpired && !isRunning && !showCelebration) {
-    return showExpired ? (
-      <div className="text-white font-medium">
-        終了から {formatElapsedTime(days, hours, minutes, seconds)}
-      </div>
-    ) : null;
-  }
-
-  // 開催中イベント（カウントアップ表示）
-  if (isExpired && isRunning && !showCelebration) {
-    return showExpired ? (
-      <div className="text-white font-medium">
-        開催中 {formatElapsedTime(days, hours, minutes, seconds)}
-      </div>
-    ) : null;
-  }
-
-  const urgencyLevel = getUrgencyLevel(totalSeconds);
-  const colorClasses = getUrgencyColor(urgencyLevel);
-  
-  const getAnimationClasses = (): string => {
-    switch (phase) {
-      case 'final-ten':
-        return 'animate-bounce text-red-600 scale-125 drop-shadow-lg';
-      case 'final-minute':
-        return 'animate-pulse scale-110 text-red-500';
-      case 'just-finished':
-        return 'animate-ping text-green-500 scale-150';
-      default:
-        return urgencyLevel === 'critical' ? 'animate-pulse' : '';
-    }
-  };
-
   const getSizeClasses = () => {
     const baseSize = {
       small: 'text-sm',
@@ -107,6 +73,52 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
     small: 'p-2',
     medium: 'p-3',
     large: 'p-4 md:p-6'
+  };
+
+  // 終了済みイベント（カウントアップ表示）
+  if (isExpired && !isRunning && !showCelebration) {
+    return showExpired ? (
+      <div className={`
+        rounded-lg border-2 font-mono font-bold text-center transition-all duration-300
+        ${textColor === 'white' ? 'text-white border-white/30' : 'text-gray-700 border-gray-300 bg-gray-50'}
+        ${containerClasses[size]}
+      `}>
+        <div className={`${sizeClasses[size]} leading-tight`}>
+          終了から {formatElapsedTime(days, hours, minutes, seconds)}
+        </div>
+      </div>
+    ) : null;
+  }
+
+  // 開催中イベント（カウントアップ表示）
+  if (isExpired && isRunning && !showCelebration) {
+    return showExpired ? (
+      <div className={`
+        rounded-lg border-2 font-mono font-bold text-center transition-all duration-300
+        ${textColor === 'white' ? 'text-white border-white/30' : 'text-green-700 border-green-300 bg-green-50'}
+        ${containerClasses[size]}
+      `}>
+        <div className={`${sizeClasses[size]} leading-tight`}>
+          開催中 {formatElapsedTime(days, hours, minutes, seconds)}
+        </div>
+      </div>
+    ) : null;
+  }
+
+  const urgencyLevel = getUrgencyLevel(totalSeconds);
+  const colorClasses = getUrgencyColor(urgencyLevel);
+  
+  const getAnimationClasses = (): string => {
+    switch (phase) {
+      case 'final-ten':
+        return 'animate-bounce text-red-600 scale-125 drop-shadow-lg';
+      case 'final-minute':
+        return 'animate-pulse scale-110 text-red-500';
+      case 'just-finished':
+        return 'animate-ping text-green-500 scale-150';
+      default:
+        return urgencyLevel === 'critical' ? 'animate-pulse' : '';
+    }
   };
 
   const formatTime = () => {
