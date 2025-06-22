@@ -1,8 +1,10 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import passport from 'passport';
 
 import { errorHandler } from './middleware/errorHandler';
@@ -16,8 +18,6 @@ import favoriteRoutes from './routes/favorites';
 import notificationRoutes from './routes/notifications';
 import firebaseAuthRoutes from './routes/firebaseAuth';
 import './config/passport'; // Passport設定を読み込み
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;

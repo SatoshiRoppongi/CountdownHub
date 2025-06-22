@@ -89,18 +89,33 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
 };
 
 // 開発モードチェックミドルウェア
-export const developmentMode = (req: Request, res: Response, next: NextFunction) => {
+export const developmentMode = async (req: Request, res: Response, next: NextFunction) => {
   const isDevelopment = process.env.NODE_ENV === 'development' || process.env.DEVELOPMENT_MODE === 'true';
   
   if (isDevelopment) {
-    // 開発モードの場合は認証をスキップ
-    (req as any).user = {
-      id: 'dev-user',
-      email: 'dev@example.com',
-      username: 'developer',
-      display_name: '開発者',
-      is_active: true
-    };
+    // 開発モードの場合は最初のユーザーを使用
+    try {
+      const firstUser = await prisma.user.findFirst({
+        where: { is_active: true },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          display_name: true,
+          is_active: true
+        }
+      });
+      
+      if (firstUser) {
+        (req as any).user = firstUser;
+      } else {
+        // ユーザーが存在しない場合はnullにする
+        (req as any).user = null;
+      }
+    } catch (error) {
+      console.error('Development mode user lookup error:', error);
+      (req as any).user = null;
+    }
   }
   
   next();

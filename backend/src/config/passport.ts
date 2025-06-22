@@ -47,11 +47,10 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     });
 
     if (user) {
-      // 既存ユーザーの場合、プロフィール情報を更新
+      // 既存ユーザーの場合、アバターのみ更新（display_nameは既存の値を保持）
       user = await prisma.user.update({
         where: { id: user.id },
         data: {
-          display_name: profile.displayName,
           avatar_url: profile.photos?.[0]?.value,
           updated_at: new Date()
         }
@@ -70,7 +69,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         where: { id: existingEmailUser.id },
         data: {
           google_id: profile.id,
-          display_name: profile.displayName || existingEmailUser.display_name,
+          // display_nameは既存の値を保持（Googleの名前で上書きしない）
+          display_name: existingEmailUser.display_name || profile.displayName,
           avatar_url: profile.photos?.[0]?.value || existingEmailUser.avatar_url,
           auth_provider: 'google',
           updated_at: new Date()
