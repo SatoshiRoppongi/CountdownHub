@@ -251,11 +251,13 @@ export const googleCallback = (req: Request, res: Response, next: Function) => {
   passport.authenticate('google', { session: false }, (err: any, user: any) => {
     if (err) {
       console.error('Google OAuth callback error:', err);
-      return res.redirect(`${process.env.FRONTEND_URL}/auth?error=oauth_error`);
+      const errorUrl = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://countdownhub.jp' : 'http://localhost:3000');
+      return res.redirect(`${errorUrl}/auth?error=oauth_error`);
     }
 
     if (!user) {
-      return res.redirect(`${process.env.FRONTEND_URL}/auth?error=oauth_failed`);
+      const errorUrl = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://countdownhub.jp' : 'http://localhost:3000');
+      return res.redirect(`${errorUrl}/auth?error=oauth_failed`);
     }
 
     try {
@@ -271,12 +273,24 @@ export const googleCallback = (req: Request, res: Response, next: Function) => {
       );
 
       // フロントエンドにリダイレクト（トークンをクエリパラメータで渡す）
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      let frontendUrl = process.env.FRONTEND_URL;
+      
+      // 環境に応じてフロントエンドURLを決定
+      if (!frontendUrl) {
+        if (process.env.NODE_ENV === 'production') {
+          frontendUrl = 'https://countdownhub.jp';
+        } else {
+          frontendUrl = 'http://localhost:3000';
+        }
+      }
+      
+      console.log('OAuth callback - redirecting to:', `${frontendUrl}/auth/callback?token=${token}&provider=google`);
       res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=google`);
 
     } catch (error) {
       console.error('Token generation error:', error);
-      res.redirect(`${process.env.FRONTEND_URL}/auth?error=token_error`);
+      const errorRedirectUrl = frontendUrl || (process.env.NODE_ENV === 'production' ? 'https://countdownhub.jp' : 'http://localhost:3000');
+      res.redirect(`${errorRedirectUrl}/auth?error=token_error`);
     }
   })(req, res, next);
 };
