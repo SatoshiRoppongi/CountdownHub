@@ -33,11 +33,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
 
     try {
       await login(email, password);
-      showToast({
-        type: 'success',
-        title: 'ログイン成功',
-        message: 'ログインしました'
-      });
       onSuccess?.();
     } catch (error) {
       console.error('Login error:', error);

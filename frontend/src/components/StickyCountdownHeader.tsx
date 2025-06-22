@@ -3,12 +3,14 @@ import { CountdownTimer } from './CountdownTimer';
 
 interface StickyCountdownHeaderProps {
   targetDate: string;
+  endDate?: string;
   eventTitle: string;
   onFinish?: () => void;
 }
 
 export const StickyCountdownHeader: React.FC<StickyCountdownHeaderProps> = ({
   targetDate,
+  endDate,
   eventTitle,
   onFinish
 }) => {
@@ -46,6 +48,7 @@ export const StickyCountdownHeader: React.FC<StickyCountdownHeaderProps> = ({
             <div className="ml-4 flex-shrink-0">
               <CountdownTimer
                 targetDate={targetDate}
+                endDate={endDate}
                 size="medium"
                 onFinish={onFinish}
               />

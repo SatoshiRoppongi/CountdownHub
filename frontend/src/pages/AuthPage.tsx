@@ -2,18 +2,25 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LoginForm } from '../components/LoginForm';
 import { RegisterForm } from '../components/RegisterForm';
+import { useToast } from '../contexts/ToastContext';
 
 type AuthMode = 'login' | 'register';
 
 export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showToast } = useToast();
   const [mode, setMode] = useState<AuthMode>('login');
 
   // リダイレクト先を取得（デフォルトはホーム）
   const from = (location.state as any)?.from?.pathname || '/';
 
   const handleAuthSuccess = () => {
+    showToast({
+      type: 'success',
+      title: 'ログイン成功',
+      message: mode === 'login' ? 'ログインしました' : 'アカウントを作成しました'
+    });
     navigate(from, { replace: true });
   };
 

@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdmin } from '../hooks/useAdmin';
+import { useToast } from '../contexts/ToastContext';
 import { NotificationBell } from './NotificationBell';
 
 interface HeaderProps {
@@ -18,8 +20,23 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { isAdmin } = useAdmin();
+  const { showToast } = useToast();
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  // Google OAuthログイン成功の検知
+  useEffect(() => {
+    const loginSuccess = sessionStorage.getItem('login_success');
+    if (loginSuccess && user) {
+      showToast({
+        type: 'success',
+        title: 'ログイン成功',
+        message: loginSuccess
+      });
+      sessionStorage.removeItem('login_success');
+    }
+  }, [user, showToast]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,13 +144,15 @@ export const Header: React.FC<HeaderProps> = ({
                       >
                         プロフィール
                       </Link>
-                      <Link
-                        to="/admin"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        管理画面
-                      </Link>
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          管理画面
+                        </Link>
+                      )}
                       <button
                         onClick={() => {
                           logout();

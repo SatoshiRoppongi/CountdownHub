@@ -157,7 +157,7 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [startDate, endDate, onFinish, getPhase, timeLeft.isExpired, wasRunning]);
+  }, [startDate, endDate, onFinish, getPhase]);
 
   return timeLeft;
 };

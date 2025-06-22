@@ -49,7 +49,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, searchTerm }) => {
       
       
       {/* Countdown Timer - Top Overlay */}
-      <div className="absolute top-4 left-4 right-4">
+      <div className="absolute top-4 left-4 right-4 pointer-events-none">
         <div className={`
           backdrop-blur-md rounded-lg p-3 shadow-lg
           ${isEnded && !isRunning ? 'bg-gray-500/90' : ''}
@@ -70,7 +70,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, searchTerm }) => {
       </div>
 
       {/* Bottom Overlay with Event Info */}
-      <div className="absolute bottom-0 left-0 right-0 p-4">
+      <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-none">
         <div className="bg-black/60 backdrop-blur-sm rounded-lg p-4">
           {/* Event Title with Favorite Button */}
           <div className="flex items-start justify-between mb-3">
@@ -80,7 +80,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, searchTerm }) => {
                 searchTerm={searchTerm}
               />
             </h3>
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 pointer-events-auto">
               <FavoriteButton 
                 eventId={event.id} 
                 size="small"

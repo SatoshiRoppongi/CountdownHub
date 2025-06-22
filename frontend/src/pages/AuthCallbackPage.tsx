@@ -55,11 +55,6 @@ export const AuthCallbackPage: React.FC = () => {
 
           if (response.ok) {
             await response.json(); // ユーザー情報を取得（AuthContextが自動更新）
-            showToast({
-              type: 'success',
-              title: 'ログイン成功',
-              message: `${provider}アカウントでログインしました`
-            });
             
             // リダイレクト先を取得（デフォルトはホーム）
             let from = sessionStorage.getItem('auth_redirect') || '/';
@@ -68,6 +63,9 @@ export const AuthCallbackPage: React.FC = () => {
               from = '/';
             }
             sessionStorage.removeItem('auth_redirect');
+            
+            // ログイン成功をsessionStorageに記録してAuthPageで表示
+            sessionStorage.setItem('login_success', `${provider}アカウントでログインしました`);
             navigate(from, { replace: true });
           } else {
             throw new Error('ユーザー情報の取得に失敗しました');

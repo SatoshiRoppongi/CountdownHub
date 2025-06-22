@@ -3,16 +3,18 @@ import { useCountdown } from '../hooks/useCountdown';
 
 interface FullscreenCountdownOverlayProps {
   targetDate: string;
+  endDate?: string;
   eventTitle: string;
   onFinish?: () => void;
 }
 
 export const FullscreenCountdownOverlay: React.FC<FullscreenCountdownOverlayProps> = ({
   targetDate,
+  endDate,
   eventTitle,
   onFinish
 }) => {
-  const { seconds, phase, justFinished } = useCountdown(targetDate, undefined, onFinish);
+  const { seconds, phase, justFinished } = useCountdown(targetDate, endDate, onFinish);
   const [showOverlay, setShowOverlay] = useState(false);
   const [overlayPhase, setOverlayPhase] = useState<'countdown' | 'celebration'>('countdown');
 

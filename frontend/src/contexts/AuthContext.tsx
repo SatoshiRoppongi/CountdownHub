@@ -20,6 +20,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, username: string, password: string, displayName?: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
+  updateUser: (userData: User) => void;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -141,12 +143,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('countdown_hub_token');
   };
 
+  const refreshUser = async () => {
+    if (token) {
+      await fetchUserProfile(token);
+    }
+  };
+
+  const updateUser = (userData: User) => {
+    setUser(userData);
+  };
+
   const value: AuthContextType = {
     user,
     token,
     login,
     register,
     logout,
+    refreshUser,
+    updateUser,
     isLoading,
     isAuthenticated: !!user
   };

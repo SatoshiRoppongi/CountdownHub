@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { eventAPI } from '../services/api';
 import { Comment } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -123,7 +124,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.author_name.trim() || !formData.content.trim()) {
+    if (!formData.content.trim()) {
       return;
     }
     
@@ -222,7 +223,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
             </button>
           ) : (
             <div className="text-sm text-gray-600">
-              コメントを投稿するには<span className="text-blue-600 font-medium">ログイン</span>が必要です
+              コメントを投稿するには<Link to="/login" className="text-blue-600 font-medium hover:text-blue-800 underline">ログイン</Link>が必要です
             </div>
           )}
         </div>
@@ -261,22 +262,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
       {showForm && isAuthenticated && (
         <form onSubmit={handleSubmit} className="mb-8 p-4 bg-gray-50 rounded-lg">
           <div className="mb-4">
-            <label htmlFor="author_name" className="block text-sm font-medium text-gray-700 mb-2">
-              お名前 *
-            </label>
-            <input
-              type="text"
-              id="author_name"
-              value={formData.author_name}
-              onChange={(e) => setFormData({ ...formData, author_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="お名前を入力してください"
-              maxLength={100}
-              required
-            />
-          </div>
-          
-          <div className="mb-4">
             <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
               コメント *
             </label>
@@ -305,7 +290,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !formData.author_name.trim() || !formData.content.trim()}
+              disabled={isSubmitting || !formData.content.trim()}
               className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isSubmitting ? '投稿中...' : '投稿する'}

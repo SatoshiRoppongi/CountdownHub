@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -11,12 +11,17 @@ interface UserProfileUpdate {
 }
 
 export const ProfilePage: React.FC = () => {
-  const { user, token } = useAuth();
+  const { user, token, updateUser } = useAuth();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [newNickname, setNewNickname] = useState(user?.display_name || '');
   const [activeTab, setActiveTab] = useState<'events' | 'comments'>('events');
+
+  // ユーザー情報が更新されたときにnewNicknameを同期
+  useEffect(() => {
+    setNewNickname(user?.display_name || '');
+  }, [user?.display_name]);
 
   // ユーザーのイベント一覧を取得
   const { data: userEvents, isLoading: eventsLoading } = useQuery({
@@ -51,7 +56,8 @@ export const ProfilePage: React.FC = () => {
   // プロフィール更新
   const updateProfileMutation = useMutation({
     mutationFn: async (profileData: UserProfileUpdate) => {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/profile`, {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/auth/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -59,12 +65,20 @@ export const ProfilePage: React.FC = () => {
         },
         body: JSON.stringify(profileData),
       });
-      if (!response.ok) throw new Error('Failed to update profile');
+      
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
+      
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       queryClient.invalidateQueries({ queryKey: ['user-comments'] });
+      // APIレスポンスから直接ユーザー情報を更新
+      if (data && data.user) {
+        updateUser(data.user);
+      }
       showToast({
         type: 'success',
         title: '更新完了',
