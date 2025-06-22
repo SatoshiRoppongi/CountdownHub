@@ -249,15 +249,19 @@ export const googleAuth = passport.authenticate('google', {
 // Google OAuth コールバック
 export const googleCallback = (req: Request, res: Response, next: Function) => {
   passport.authenticate('google', { session: false }, (err: any, user: any) => {
+    // フロントエンドURLを決定（全体で使用）
+    const getFrontendUrl = () => {
+      return process.env.FRONTEND_URL || 
+             (process.env.NODE_ENV === 'production' ? 'https://countdownhub.jp' : 'http://localhost:3000');
+    };
+
     if (err) {
       console.error('Google OAuth callback error:', err);
-      const errorUrl = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://countdownhub.jp' : 'http://localhost:3000');
-      return res.redirect(`${errorUrl}/auth?error=oauth_error`);
+      return res.redirect(`${getFrontendUrl()}/auth?error=oauth_error`);
     }
 
     if (!user) {
-      const errorUrl = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://countdownhub.jp' : 'http://localhost:3000');
-      return res.redirect(`${errorUrl}/auth?error=oauth_failed`);
+      return res.redirect(`${getFrontendUrl()}/auth?error=oauth_failed`);
     }
 
     try {
@@ -273,24 +277,13 @@ export const googleCallback = (req: Request, res: Response, next: Function) => {
       );
 
       // フロントエンドにリダイレクト（トークンをクエリパラメータで渡す）
-      let frontendUrl = process.env.FRONTEND_URL;
-      
-      // 環境に応じてフロントエンドURLを決定
-      if (!frontendUrl) {
-        if (process.env.NODE_ENV === 'production') {
-          frontendUrl = 'https://countdownhub.jp';
-        } else {
-          frontendUrl = 'http://localhost:3000';
-        }
-      }
-      
+      const frontendUrl = getFrontendUrl();
       console.log('OAuth callback - redirecting to:', `${frontendUrl}/auth/callback?token=${token}&provider=google`);
       res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=google`);
 
     } catch (error) {
       console.error('Token generation error:', error);
-      const errorRedirectUrl = frontendUrl || (process.env.NODE_ENV === 'production' ? 'https://countdownhub.jp' : 'http://localhost:3000');
-      res.redirect(`${errorRedirectUrl}/auth?error=token_error`);
+      res.redirect(`${getFrontendUrl()}/auth?error=token_error`);
     }
   })(req, res, next);
 };
