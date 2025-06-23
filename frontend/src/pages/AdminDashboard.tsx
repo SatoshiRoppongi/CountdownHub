@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useAdmin as useAdminCheck } from '../hooks/useAdmin';
 import { AnnouncementManagement } from '../components/AnnouncementManagement';
+import EventCSVImport from '../components/EventCSVImport';
 
 export const AdminDashboard: React.FC = () => {
   const { isAdmin, isLoading: adminLoading, error: adminError } = useAdminCheck();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'announcements'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'events' | 'announcements'>('dashboard');
 
   // ローディング中
   if (adminLoading) {
@@ -68,6 +69,16 @@ export const AdminDashboard: React.FC = () => {
                 ダッシュボード
               </button>
               <button
+                onClick={() => setActiveTab('events')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'events'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                イベント管理
+              </button>
+              <button
                 onClick={() => setActiveTab('announcements')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'announcements'
@@ -87,8 +98,13 @@ export const AdminDashboard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-semibold text-blue-800 mb-2">イベント管理</h3>
-                <p className="text-blue-600 text-sm mb-3">すべてのイベントの管理と統計</p>
-                <p className="text-blue-500 text-sm">実装予定</p>
+                <p className="text-blue-600 text-sm mb-3">CSVによる一括登録と管理</p>
+                <button
+                  onClick={() => setActiveTab('events')}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  管理画面へ →
+                </button>
               </div>
               
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -113,6 +129,19 @@ export const AdminDashboard: React.FC = () => {
                 <p className="text-purple-600 text-sm mb-3">アプリケーション設定</p>
                 <p className="text-purple-500 text-sm">実装予定</p>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'events' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">イベント管理</h2>
+                <p className="text-gray-600 mb-6">
+                  CSVファイルによるイベントの一括登録ができます。大量のイベントデータを効率的にインポートできます。
+                </p>
+              </div>
+              
+              <EventCSVImport />
             </div>
           )}
 

@@ -1,10 +1,11 @@
 import 'express-session';
-import { Session } from 'express-session';
 
-declare module 'express' {
-  interface Request {
-    sessionID?: string;
-    session?: Session & Partial<any>;
+declare global {
+  namespace Express {
+    interface Request {
+      sessionID?: string;
+      session?: any;
+    }
   }
 }
 

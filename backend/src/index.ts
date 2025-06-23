@@ -126,16 +126,17 @@ console.log('🔧 Session Configuration:', {
 
 app.use(session(sessionConfig));
 
-// セッションデバッグミドルウェア（本番環境のみ）
-if (process.env.NODE_ENV === 'production') {
+// セッションデバッグミドルウェア（本番環境のTwitter OAuth用）
+if (process.env.NODE_ENV === 'production' && process.env.TWITTER_OAUTH_DEBUG === 'true') {
   app.use((req, res, next) => {
     if (req.path.includes('/auth/twitter')) {
+      const sessionReq = req as any; // TypeScript回避
       console.log('🔍 Twitter OAuth Request:', {
         method: req.method,
         path: req.path,
-        sessionID: req.sessionID || 'not available',
-        sessionExists: !!req.session,
-        sessionData: req.session ? Object.keys(req.session) : 'no session',
+        sessionID: sessionReq.sessionID || 'not available',
+        sessionExists: !!sessionReq.session,
+        sessionData: sessionReq.session ? Object.keys(sessionReq.session) : 'no session',
         cookies: req.headers.cookie ? 'present' : 'missing'
       });
     }
