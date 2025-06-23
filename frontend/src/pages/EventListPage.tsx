@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useInfiniteEvents } from '../hooks/useInfiniteEvents';
-import { EventTimeTabs } from '../components/EventTimeTabs';
+import React, { useState, useEffect } from 'react';
+import { useEvents } from '../hooks/useEvents';
+import { EventTimeTabsWithPagination } from '../components/EventTimeTabsWithPagination';
 import { AdvancedSearchPanel } from '../components/AdvancedSearchPanel';
 import { SearchHistoryPanel } from '../components/SearchHistoryPanel';
 import { SearchResultSummary } from '../components/SearchHighlight';
 import { useSearchHistory } from '../hooks/useSearchHistory';
-import { EventFilters } from '../types';
+import { EventFilters, SortOption } from '../types';
 
 interface EventListPageProps {
   searchQuery?: string;
@@ -26,9 +26,14 @@ export const EventListPage: React.FC<EventListPageProps> = ({
     sort_by: 'start_datetime',
     order: 'asc'
   });
+  const [currentSort, setCurrentSort] = useState<SortOption>('start_datetime_asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [activeTimeCategory, setActiveTimeCategory] = useState<'today' | 'upcoming' | 'ongoing' | 'ended'>('today');
   const [showAdvancedPanel, setShowAdvancedPanel] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const { addToHistory } = useSearchHistory();
+  
+  const itemsPerPage = 30;
   
   // ヘッダーからの検索クエリを反映
   useEffect(() => {
@@ -36,6 +41,7 @@ export const EventListPage: React.FC<EventListPageProps> = ({
       ...prev,
       search: searchQuery || undefined
     }));
+    setCurrentPage(1); // 検索時はページをリセット
   }, [searchQuery]);
 
   // ヘッダーからのパネル表示制御
@@ -53,32 +59,35 @@ export const EventListPage: React.FC<EventListPageProps> = ({
 
   const handleAdvancedSearch = (newFilters: EventFilters) => {
     setFilters(newFilters);
+    setCurrentPage(1); // フィルター変更時はページをリセット
   };
 
   const handleHistorySearch = (newFilters: EventFilters) => {
     setFilters(newFilters);
+    setCurrentPage(1); // フィルター変更時はページをリセット
   };
+
+  // ソート設定とtimeCategoryをフィルターに反映
+  useEffect(() => {
+    const parts = currentSort.split('_');
+    const order = parts.pop() as 'asc' | 'desc';
+    const sort_by = parts.join('_') as 'start_datetime' | 'created_at' | 'comments' | 'favorites';
+    setFilters(prev => ({ ...prev, sort_by, order, timeCategory: activeTimeCategory }));
+  }, [currentSort, activeTimeCategory]);
 
   const { 
     data, 
     isLoading, 
-    error, 
-    fetchNextPage, 
-    hasNextPage, 
-    isFetchingNextPage 
-  } = useInfiniteEvents({ ...filters, limit: 20 });
+    error
+  } = useEvents({ 
+    ...filters, 
+    page: currentPage, 
+    limit: itemsPerPage 
+  });
 
-  // 全ページのイベントをフラット化
-  const allEvents = useMemo(() => {
-    if (!data?.pages) return [];
-    return data.pages.flatMap(page => page.events);
-  }, [data]);
-
-  // 合計イベント数を計算
-  const totalEvents = useMemo(() => {
-    if (!data?.pages || data.pages.length === 0) return 0;
-    return data.pages[0].pagination?.total ?? 0;
-  }, [data]);
+  const events = data?.events || [];
+  const totalEvents = data?.pagination?.total || 0;
+  const totalPages = data?.pagination?.totalPages || 0;
 
   // 検索結果が取得されたら履歴に追加
   useEffect(() => {
@@ -113,6 +122,7 @@ export const EventListPage: React.FC<EventListPageProps> = ({
       
       return newFilters;
     });
+    setCurrentPage(1); // フィルター変更時はページをリセット
   };
 
   const handleClearAllFilters = () => {
@@ -120,14 +130,35 @@ export const EventListPage: React.FC<EventListPageProps> = ({
       sort_by: 'start_datetime',
       order: 'asc'
     });
+    setCurrentPage(1); // フィルター変更時はページをリセット
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSortChange = (sort: SortOption) => {
+    setCurrentSort(sort);
+    setCurrentPage(1); // ソート変更時はページをリセット
+  };
+
+  const handleTimeCategoryChange = (category: 'today' | 'upcoming' | 'ongoing' | 'ended') => {
+    setActiveTimeCategory(category);
+    setCurrentPage(1); // タブ変更時はページをリセット
   };
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6">
+        <div className="mb-6 text-center">
+          <p className="text-gray-600 text-lg">
+            日本全国のイベントをカウントダウンでチェック！
+          </p>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-gray-200 animate-pulse rounded-lg h-64"></div>
+          {[...Array(30)].map((_, i) => (
+            <div key={i} className="bg-gray-200 animate-pulse rounded-xl h-80"></div>
           ))}
         </div>
       </div>
@@ -166,14 +197,20 @@ export const EventListPage: React.FC<EventListPageProps> = ({
         onClearAll={handleClearAllFilters}
       />
 
-      {/* イベント時間軸タブ */}
-      {allEvents.length > 0 ? (
-        <EventTimeTabs 
-          events={allEvents} 
+      {/* イベントタブ（ページネーション付き） */}
+      {events.length > 0 ? (
+        <EventTimeTabsWithPagination
+          events={events}
           searchTerm={filters.search}
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-          onLoadMore={fetchNextPage}
+          totalEvents={totalEvents}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+          onSortChange={handleSortChange}
+          currentSort={currentSort}
+          activeTimeCategory={activeTimeCategory}
+          onTimeCategoryChange={handleTimeCategoryChange}
         />
       ) : (
         <div className="text-center py-12 bg-white rounded-lg shadow-md">

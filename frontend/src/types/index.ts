@@ -64,6 +64,7 @@ export interface EventFilters {
     start_date: string;
     end_date: string;
   };
+  timeCategory?: 'today' | 'upcoming' | 'ongoing' | 'ended';
 }
 
 export interface AdminStats {

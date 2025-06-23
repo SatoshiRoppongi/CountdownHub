@@ -5,6 +5,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { FirebaseAuthProvider } from './contexts/FirebaseAuthContext';
 import { Header } from './components/Header';
+import { Footer } from './components/Footer';
 import { EventListPage } from './pages/EventListPage';
 import { EventDetailPage } from './pages/EventDetailPage';
 import { EventRegistrationPage } from './pages/EventRegistrationPage';
@@ -62,6 +63,7 @@ function AppContent() {
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
         </Routes>
       </main>
+      <Footer />
     </div>
   );
 }
