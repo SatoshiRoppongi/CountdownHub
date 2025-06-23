@@ -8,7 +8,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import passport from 'passport';
-import session from 'express-session';
+import session, { SessionOptions } from 'express-session';
 
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './middleware/logger';
@@ -96,7 +96,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // セッション設定（Twitter OAuth用）
-const sessionConfig = {
+const sessionConfig: SessionOptions = {
   secret: process.env.SESSION_SECRET || 'your-session-secret-change-this-in-production',
   resave: true, // 本番環境でのセッション保持を強制
   saveUninitialized: true, // Twitter OAuth 1.0aでは必須
@@ -118,10 +118,10 @@ const sessionConfig = {
 console.log('🔧 Session Configuration:', {
   environment: process.env.NODE_ENV,
   sessionName: sessionConfig.name,
-  cookieSecure: sessionConfig.cookie.secure,
-  cookieSameSite: sessionConfig.cookie.sameSite,
-  cookieDomain: sessionConfig.cookie.domain,
-  maxAge: sessionConfig.cookie.maxAge
+  cookieSecure: sessionConfig.cookie?.secure,
+  cookieSameSite: sessionConfig.cookie?.sameSite,
+  cookieDomain: sessionConfig.cookie?.domain,
+  maxAge: sessionConfig.cookie?.maxAge
 });
 
 app.use(session(sessionConfig));
