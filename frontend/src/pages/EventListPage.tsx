@@ -57,6 +57,16 @@ export const EventListPage: React.FC<EventListPageProps> = ({
     }
   }, [showSearchHistory]);
 
+  // 検索実行時にパネルを自動で閉じる
+  useEffect(() => {
+    if (filters.search || filters.tags?.length || filters.venue_type || filters.dateRange) {
+      setShowAdvancedPanel(false);
+      setShowHistoryPanel(false);
+      onAdvancedSearchClose?.();
+      onSearchHistoryClose?.();
+    }
+  }, [filters.search, filters.tags, filters.venue_type, filters.dateRange, onAdvancedSearchClose, onSearchHistoryClose]);
+
   const handleAdvancedSearch = (newFilters: EventFilters) => {
     setFilters(newFilters);
     setCurrentPage(1); // フィルター変更時はページをリセット

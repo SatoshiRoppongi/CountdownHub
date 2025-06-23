@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdmin } from '../hooks/useAdmin';
@@ -39,6 +39,9 @@ export const Header: React.FC<HeaderProps> = ({
     }
   }, [user, showToast]);
 
+  // デバウンス用のタイマー参照
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (onSearchChange) {
@@ -46,12 +49,35 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const handleSearchChange = (value: string) => {
-    setLocalSearchQuery(value);
+  // デバウンス処理付きの検索ハンドラー
+  const debouncedSearchChange = useCallback((value: string) => {
     if (onSearchChange) {
       onSearchChange(value);
     }
+  }, [onSearchChange]);
+
+  const handleSearchChange = (value: string) => {
+    setLocalSearchQuery(value);
+    
+    // 既存のタイマーをクリア
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // デバウンス処理（400ms後に実行）
+    debounceTimerRef.current = setTimeout(() => {
+      debouncedSearchChange(value);
+    }, 400);
   };
+
+  // コンポーネントアンマウント時のクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <header className="bg-white shadow-md border-b">
