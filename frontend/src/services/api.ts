@@ -121,6 +121,50 @@ export const favoriteAPI = {
   },
 };
 
+export const authAPI = {
+  register: async (userData: {
+    email: string;
+    username: string;
+    password: string;
+    display_name?: string;
+  }): Promise<{ message: string; user: any; token: string }> => {
+    const response = await api.post('/auth/register', userData);
+    return response.data;
+  },
+
+  login: async (credentials: {
+    email: string;
+    password: string;
+  }): Promise<{ message: string; user: any; token: string }> => {
+    const response = await api.post('/auth/login', credentials);
+    return response.data;
+  },
+
+  getProfile: async (): Promise<{ user: any }> => {
+    const response = await api.get('/auth/profile');
+    return response.data;
+  },
+
+  updateProfile: async (userData: {
+    display_name: string;
+  }): Promise<{ message: string; user: any }> => {
+    const response = await api.patch('/auth/profile', userData);
+    return response.data;
+  },
+
+  checkDisplayNameAvailability: async (displayName: string): Promise<{ available: boolean; message: string }> => {
+    const response = await api.get('/auth/check-display-name', {
+      params: { display_name: displayName }
+    });
+    return response.data;
+  },
+
+  logout: async (): Promise<{ message: string }> => {
+    const response = await api.post('/auth/logout');
+    return response.data;
+  },
+};
+
 export const notificationAPI = {
   getUserNotifications: async (params: { page?: number; limit?: number; unread_only?: boolean } = {}): Promise<{
     notifications: Array<{

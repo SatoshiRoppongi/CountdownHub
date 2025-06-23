@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { authAPI } from '../services/api';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -16,13 +17,74 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
     displayName: ''
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [, setDisplayNameChecking] = useState(false);
+  const [displayNameStatus, setDisplayNameStatus] = useState<'available' | 'unavailable' | 'checking' | null>(null);
   const { register, isLoading } = useAuth();
   const { showToast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // ニックネーム入力時にリアルタイムチェック状態をリセット
+    if (name === 'displayName') {
+      setDisplayNameStatus(null);
+    }
   };
+
+  // ニックネーム重複チェック（デバウンス付き）
+  const checkDisplayNameAvailability = useCallback(
+    async (displayName: string) => {
+      if (!displayName.trim() || displayName.trim().length === 0) {
+        setDisplayNameStatus(null);
+        return;
+      }
+
+      if (displayName.trim().length > 100) {
+        setDisplayNameStatus('unavailable');
+        setErrors(prev => ({ ...prev, displayName: 'ニックネームは100文字以下で入力してください' }));
+        return;
+      }
+
+      setDisplayNameChecking(true);
+      setDisplayNameStatus('checking');
+      
+      try {
+        const result = await authAPI.checkDisplayNameAvailability(displayName.trim());
+        setDisplayNameStatus(result.available ? 'available' : 'unavailable');
+        
+        if (!result.available) {
+          setErrors(prev => ({ ...prev, displayName: result.message }));
+        } else {
+          setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors.displayName;
+            return newErrors;
+          });
+        }
+      } catch (error) {
+        console.error('Display name check error:', error);
+        setDisplayNameStatus(null);
+      } finally {
+        setDisplayNameChecking(false);
+      }
+    },
+    []
+  );
+
+  // デバウンス処理
+  useEffect(() => {
+    if (!formData.displayName.trim()) {
+      setDisplayNameStatus(null);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      checkDisplayNameAvailability(formData.displayName);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.displayName, checkDisplayNameAvailability]);
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -62,8 +124,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
     }
 
     // 表示名
-    if (formData.displayName.trim() && formData.displayName.length > 100) {
-      newErrors.displayName = '表示名は100文字以下で入力してください';
+    if (formData.displayName.trim()) {
+      if (formData.displayName.length > 100) {
+        newErrors.displayName = 'ニックネームは100文字以下で入力してください';
+      } else if (displayNameStatus === 'unavailable') {
+        newErrors.displayName = 'このニックネームは既に使用されています。異なるニックネームを設定してください。';
+      } else if (displayNameStatus === 'checking') {
+        newErrors.displayName = 'ニックネームを確認中です...';
+      }
     }
 
     return newErrors;
@@ -151,21 +219,49 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchT
 
         <div>
           <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
-            表示名（任意）
+            ニックネーム（任意）
           </label>
-          <input
-            type="text"
-            id="displayName"
-            name="displayName"
-            value={formData.displayName}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${ 
-              errors.displayName ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="山田太郎"
-            disabled={isLoading}
-          />
+          <div className="relative">
+            <input
+              type="text"
+              id="displayName"
+              name="displayName"
+              value={formData.displayName}
+              onChange={handleChange}
+              className={`w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 ${
+                errors.displayName 
+                  ? 'border-red-500 focus:ring-red-500' 
+                  : displayNameStatus === 'available'
+                  ? 'border-green-500 focus:ring-green-500'
+                  : displayNameStatus === 'unavailable'
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300 focus:ring-blue-500'
+              }`}
+              placeholder="山田太郎"
+              disabled={isLoading}
+            />
+            {/* ステータスアイコン */}
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              {displayNameStatus === 'checking' && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              )}
+              {displayNameStatus === 'available' && (
+                <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              {displayNameStatus === 'unavailable' && (
+                <svg className="h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+            </div>
+          </div>
           {errors.displayName && <p className="text-red-500 text-sm mt-1">{errors.displayName}</p>}
+          {displayNameStatus === 'available' && !errors.displayName && (
+            <p className="text-green-600 text-sm mt-1">このニックネームは使用可能です</p>
+          )}
+          <p className="text-gray-500 text-xs mt-1">空の場合は自動で「UserXXXXXX」が設定されます</p>
         </div>
 
         <div>
