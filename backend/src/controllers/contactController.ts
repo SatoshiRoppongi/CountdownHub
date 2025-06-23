@@ -11,7 +11,13 @@ export const createContact = async (req: Request, res: Response, next: NextFunct
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       console.log('Validation errors:', errors.array());
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        message: '入力内容に問題があります',
+        errors: errors.array().map(error => ({
+          field: error.type === 'field' ? error.path : 'unknown',
+          message: error.msg
+        }))
+      });
     }
 
     const { name, email, subject, category, message } = req.body;

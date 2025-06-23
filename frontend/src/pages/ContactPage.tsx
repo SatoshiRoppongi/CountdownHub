@@ -21,8 +21,51 @@ export const ContactPage: React.FC = () => {
     }));
   };
 
+  const validateForm = () => {
+    const errors: string[] = [];
+    
+    if (!formData.name.trim()) {
+      errors.push('お名前を入力してください');
+    } else if (formData.name.length > 100) {
+      errors.push('お名前は100文字以下で入力してください');
+    }
+    
+    if (!formData.email.trim()) {
+      errors.push('メールアドレスを入力してください');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.push('有効なメールアドレスを入力してください');
+    }
+    
+    if (!formData.subject.trim()) {
+      errors.push('件名を入力してください');
+    } else if (formData.subject.length > 255) {
+      errors.push('件名は255文字以下で入力してください');
+    }
+    
+    if (!formData.category) {
+      errors.push('カテゴリを選択してください');
+    }
+    
+    if (!formData.message.trim()) {
+      errors.push('お問い合わせ内容を入力してください');
+    } else if (formData.message.length < 10) {
+      errors.push('お問い合わせ内容は10文字以上で入力してください');
+    } else if (formData.message.length > 10000) {
+      errors.push('お問い合わせ内容は10000文字以下で入力してください');
+    }
+    
+    return errors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // フロントエンドバリデーション
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      showError(`入力内容を確認してください:\n\n${validationErrors.join('\n')}`);
+      return;
+    }
 
     try {
       await contactMutation.mutateAsync(formData);
@@ -35,6 +78,7 @@ export const ContactPage: React.FC = () => {
         message: ''
       });
     } catch (error) {
+      console.error('Contact form error:', error);
       const errorMessage = error instanceof Error ? error.message : '送信に失敗しました。時間をおいて再度お試しください。';
       showError(errorMessage);
     }

@@ -140,16 +140,28 @@ export const EventTimeTabsWithPagination: React.FC<EventTimeTabsWithPaginationPr
             {activeTimeCategory === 'ended' && '✅'}
           </div>
           <h3 className="text-xl font-medium text-gray-900 mb-2">
-            {activeTimeCategory === 'today' && '当日開催のイベントはありません'}
-            {activeTimeCategory === 'upcoming' && '今後開催予定のイベントはありません'}
-            {activeTimeCategory === 'ongoing' && '現在開催中のイベントはありません'}
-            {activeTimeCategory === 'ended' && '終了したイベントはありません'}
+            {searchTerm ? (
+              `「${searchTerm}」に一致するイベントが見つかりません`
+            ) : (
+              <>
+                {activeTimeCategory === 'today' && '当日開催のイベントはありません'}
+                {activeTimeCategory === 'upcoming' && '今後開催予定のイベントはありません'}
+                {activeTimeCategory === 'ongoing' && '現在開催中のイベントはありません'}
+                {activeTimeCategory === 'ended' && '終了したイベントはありません'}
+              </>
+            )}
           </h3>
           <p className="text-gray-600">
-            {activeTimeCategory === 'today' && '新しいイベントが追加されるまでお待ちください。'}
-            {activeTimeCategory === 'upcoming' && '新しいイベントが登録されるまでお待ちください。'}
-            {activeTimeCategory === 'ongoing' && 'ライブイベントが開始されるまでお待ちください。'}
-            {activeTimeCategory === 'ended' && '過去のイベントが表示されます。'}
+            {searchTerm ? (
+              '検索条件を変更してお試しください。'
+            ) : (
+              <>
+                {activeTimeCategory === 'today' && '新しいイベントが追加されるまでお待ちください。'}
+                {activeTimeCategory === 'upcoming' && '新しいイベントが登録されるまでお待ちください。'}
+                {activeTimeCategory === 'ongoing' && 'ライブイベントが開始されるまでお待ちください。'}
+                {activeTimeCategory === 'ended' && '過去のイベントが表示されます。'}
+              </>
+            )}
           </p>
         </div>
       )}

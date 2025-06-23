@@ -168,18 +168,39 @@ class EmailService {
         `
       };
 
-      // 開発環境ではログのみ、本番環境では実際にメール送信
+      // 環境に応じたメール送信
       if (process.env.NODE_ENV === 'development') {
-        console.log('📧 [開発環境] 管理者通知メール:', {
-          to: adminMailOptions.to,
-          subject: adminMailOptions.subject,
-          contactId: data.contactId
-        });
-        console.log('📧 [開発環境] ユーザー自動返信メール:', {
-          to: userMailOptions.to,
-          subject: userMailOptions.subject,
-          contactId: data.contactId
-        });
+        // 開発環境でもメール送信をテストする場合
+        if (process.env.ENABLE_EMAIL_IN_DEV === 'true') {
+          try {
+            await Promise.all([
+              this.transporter.sendMail(adminMailOptions),
+              this.transporter.sendMail(userMailOptions)
+            ]);
+            
+            console.log('📧 [開発環境] メール送信完了:', {
+              contactId: data.contactId,
+              adminEmail: adminMailOptions.to,
+              userEmail: userMailOptions.to
+            });
+          } catch (emailError) {
+            console.error('📧 [開発環境] メール送信エラー:', emailError);
+            // 開発環境ではメール送信エラーでも処理を続行
+          }
+        } else {
+          // 開発環境ではログのみ
+          console.log('📧 [開発環境] 管理者通知メール:', {
+            to: adminMailOptions.to,
+            subject: adminMailOptions.subject,
+            contactId: data.contactId
+          });
+          console.log('📧 [開発環境] ユーザー自動返信メール:', {
+            to: userMailOptions.to,
+            subject: userMailOptions.subject,
+            contactId: data.contactId
+          });
+          console.log('💡 [開発環境] 実際にメールを送信するには ENABLE_EMAIL_IN_DEV=true を設定してください');
+        }
       } else {
         // 本番環境では実際にメール送信
         await Promise.all([
