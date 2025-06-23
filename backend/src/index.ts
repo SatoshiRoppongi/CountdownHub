@@ -40,11 +40,54 @@ const corsOptions = {
     'http://localhost:3000', // 開発環境
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'Accept',
+    'Origin'
+  ],
   credentials: true,
+  optionsSuccessStatus: 200, // for legacy browser support
+  preflightContinue: false,
 };
 
+// CORS設定の詳細ログ
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (process.env.NODE_ENV === 'production' && req.method === 'OPTIONS') {
+    console.log(`🔍 CORS Preflight Request:`, {
+      method: req.method,
+      url: req.url,
+      origin: origin,
+      headers: req.headers
+    });
+  }
+  next();
+});
+
 app.use(cors(corsOptions));
+
+// プリフライトリクエストの明示的処理
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  console.log(`OPTIONS request from origin: ${origin}`);
+  
+  res.header('Access-Control-Allow-Origin', origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
+// CORS設定の確認ログ
+console.log('🔧 CORS Configuration:', {
+  environment: process.env.NODE_ENV,
+  allowedOrigins: corsOptions.origin,
+  allowedMethods: corsOptions.methods,
+  allowedHeaders: corsOptions.allowedHeaders
+});
+
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));

@@ -8,8 +8,12 @@ const getApiBaseUrl = () => {
     return process.env.REACT_APP_API_URL;
   }
   
-  // 本番環境では現在のホストを使用
+  // 本番環境では専用のAPIドメインを使用
   if (process.env.NODE_ENV === 'production') {
+    const hostname = window.location.hostname;
+    if (hostname === 'www.countdownhub.jp' || hostname === 'countdownhub.jp') {
+      return 'https://api.countdownhub.jp';
+    }
     return window.location.origin;
   }
   
