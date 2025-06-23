@@ -84,10 +84,6 @@ class TwitterOAuthStore {
     }
   }
 
-  // ランダムキー生成
-  private generateKey(): string {
-    return `twitter_oauth_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-  }
 
   // 統計情報取得
   getStats(): { totalTokens: number; activeTokens: number } {
