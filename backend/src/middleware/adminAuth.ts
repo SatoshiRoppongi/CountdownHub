@@ -25,7 +25,12 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
 
 // 管理者ユーザーかどうかを判定
 function isAdminUser(user: any): boolean {
-  // 管理者の判定ロジック
+  // 最優先: データベースの is_admin フラグをチェック
+  if (user.is_admin === true) {
+    return true;
+  }
+
+  // フォールバック: 従来の判定ロジック
   // 1. 特定のメールドメイン
   const adminDomains = ['admin.countdownhub.jp', 'management.countdownhub.jp'];
   if (adminDomains.some(domain => user.email?.endsWith(`@${domain}`))) {
@@ -35,7 +40,7 @@ function isAdminUser(user: any): boolean {
   // 2. 事前に登録された管理者アカウント
   const adminEmails = [
     // 環境変数から管理者メールアドレスを取得
-    process.env.ADMIN_EMAIL_1,
+    process.env.ADMIN_EMAIL_1 || 'satoshiroppongi@gmail.com', // あなたのメールアドレス
     process.env.ADMIN_EMAIL_2,
     process.env.ADMIN_EMAIL_3,
   ].filter(Boolean);

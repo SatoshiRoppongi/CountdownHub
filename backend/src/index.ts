@@ -94,16 +94,30 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // セッション設定（Twitter OAuth用）
-app.use(session({
+const sessionConfig = {
   secret: process.env.SESSION_SECRET || 'your-session-secret-change-this-in-production',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true, // Twitter OAuth 1.0aでは必須
+  name: 'countdownhub.sid', // セッション名を明示的に設定
   cookie: {
     secure: process.env.NODE_ENV === 'production', // 本番環境ではHTTPS必須
     httpOnly: true,
-    maxAge: 1000 * 60 * 15 // 15分
+    maxAge: 1000 * 60 * 30, // 30分に延長（OAuth処理時間を考慮）
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'lax' as const, // 本番環境でのクロスサイトセッション対応
+    domain: process.env.NODE_ENV === 'production' ? '.countdownhub.jp' : undefined // 本番環境でのドメイン設定
   }
-}));
+};
+
+console.log('🔧 Session Configuration:', {
+  environment: process.env.NODE_ENV,
+  sessionName: sessionConfig.name,
+  cookieSecure: sessionConfig.cookie.secure,
+  cookieSameSite: sessionConfig.cookie.sameSite,
+  cookieDomain: sessionConfig.cookie.domain,
+  maxAge: sessionConfig.cookie.maxAge
+});
+
+app.use(session(sessionConfig));
 
 app.use(passport.initialize());
 app.use(passport.session());
