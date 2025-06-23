@@ -6,6 +6,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import passport from 'passport';
+import session from 'express-session';
 
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './middleware/logger';
@@ -91,7 +92,21 @@ console.log('🔧 CORS Configuration:', {
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// セッション設定（Twitter OAuth用）
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-session-secret-change-this-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // 本番環境ではHTTPS必須
+    httpOnly: true,
+    maxAge: 1000 * 60 * 15 // 15分
+  }
+}));
+
 app.use(passport.initialize());
+app.use(passport.session());
 app.use(logger);
 
 app.use('/api/auth', authRoutes);
