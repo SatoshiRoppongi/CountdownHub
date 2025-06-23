@@ -191,11 +191,11 @@ model Announcement {
   is_active   Boolean              @default(true)
   start_date  DateTime?            @db.Timestamptz(6) // 表示開始日時
   end_date    DateTime?            @db.Timestamptz(6) // 表示終了日時
-  created_by  String               @db.VarChar(255) // 作成者ユーザーID
+  created_by  String?              @db.VarChar(255) // 作成者ユーザーID
   created_at  DateTime             @default(now()) @db.Timestamptz(6)
   updated_at  DateTime             @default(now()) @updatedAt @db.Timestamptz(6)
 
-  creator User @relation(fields: [created_by], references: [id], onDelete: Cascade)
+  creator User? @relation(fields: [created_by], references: [id], onDelete: SetNull)
 
   @@map("announcements")
   @@index([is_active])
