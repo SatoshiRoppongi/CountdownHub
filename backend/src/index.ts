@@ -103,7 +103,7 @@ const sessionConfig = {
     secure: process.env.NODE_ENV === 'production', // 本番環境ではHTTPS必須
     httpOnly: true,
     maxAge: 1000 * 60 * 30, // 30分に延長（OAuth処理時間を考慮）
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 本番環境でのクロスサイトセッション対応
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'lax' as const, // 本番環境でのクロスサイトセッション対応
     domain: process.env.NODE_ENV === 'production' ? '.countdownhub.jp' : undefined // 本番環境でのドメイン設定
   }
 };
