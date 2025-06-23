@@ -570,7 +570,6 @@ export const twitterCallback = async (req: Request, res: Response) => {
     console.log('🐦 Twitter OAuth callback received:', {
       oauth_token: req.query.oauth_token,
       oauth_verifier: req.query.oauth_verifier,
-      state: req.query.state,
       denied: req.query.denied
     });
 
@@ -585,7 +584,6 @@ export const twitterCallback = async (req: Request, res: Response) => {
 
     const oauth_token = req.query.oauth_token as string;
     const oauth_verifier = req.query.oauth_verifier as string;
-    const state = req.query.state as string;
 
     if (!oauth_token || !oauth_verifier) {
       console.error('❌ Missing OAuth parameters');
