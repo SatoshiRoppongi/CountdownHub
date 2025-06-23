@@ -8,8 +8,12 @@ const getApiBaseUrl = () => {
     return process.env.REACT_APP_API_URL;
   }
   
-  // 本番環境では現在のホストを使用
+  // 本番環境では専用のAPIドメインを使用
   if (process.env.NODE_ENV === 'production') {
+    const hostname = window.location.hostname;
+    if (hostname === 'www.countdownhub.jp' || hostname === 'countdownhub.jp') {
+      return 'https://api.countdownhub.jp';
+    }
     return window.location.origin;
   }
   
@@ -192,6 +196,18 @@ export const authAPI = {
 
   logout: async (): Promise<{ message: string }> => {
     const response = await api.post('/auth/logout');
+    return response.data;
+  },
+};
+
+export const userAPI = {
+  getUserEvents: async (): Promise<{ events: Event[] }> => {
+    const response = await api.get('/users/events');
+    return response.data;
+  },
+
+  getUserComments: async (): Promise<{ comments: (Comment & { event: { id: number; title: string } })[] }> => {
+    const response = await api.get('/users/comments');
     return response.data;
   },
 };

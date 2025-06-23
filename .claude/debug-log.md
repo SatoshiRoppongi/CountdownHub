@@ -10,6 +10,50 @@
 
 ---
 
+### 本番環境CORS設定問題 (2025-06-23)
+**日付**: 2025-06-23 19:42  
+**問題**: 本番環境でお問い合わせフォーム送信時にCORSエラー発生
+```
+Access to XMLHttpRequest at 'https://api.countdownhub.jp/api/contact' 
+from origin 'https://www.countdownhub.jp' has been blocked by CORS policy: 
+Response to preflight request doesn't pass access control check: 
+No 'Access-Control-Allow-Origin' header is present on the requested resource.
+```
+
+**原因分析**:
+1. フロントエンド(`www.countdownhub.jp`)とAPI(`api.countdownhub.jp`)が異なるドメイン
+2. プリフライトリクエスト(OPTIONS)に対する適切なレスポンス不足
+3. 本番環境の環境変数設定不備
+
+**解決策**:
+1. **バックエンドCORS設定強化** (`backend/src/index.ts`):
+   - プリフライトリクエストの明示的処理追加
+   - 許可ヘッダー拡張: `X-Requested-With`, `Accept`, `Origin`
+   - `optionsSuccessStatus: 200`設定
+   - 詳細デバッグログ追加
+
+2. **フロントエンドAPI URL設定改善** (`frontend/src/services/api.ts`):
+   - 動的ドメイン検出による正確なAPI URLマッピング
+   - `www.countdownhub.jp` → `https://api.countdownhub.jp`の自動変換
+
+3. **環境変数ファイル整理**:
+   - `.env.development`: 開発環境用設定
+   - `.env.production`: 本番環境用設定
+
+**検証方法**:
+```bash
+# 本番環境でのプリフライトリクエスト確認
+curl -X OPTIONS https://api.countdownhub.jp/api/contact \
+  -H "Origin: https://www.countdownhub.jp" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: Content-Type,Authorization" \
+  -v
+```
+
+**コミット**: `ea86764 - fix: 本番環境でのCORS設定問題を修正`
+
+---
+
 ## 一般的なトラブルシューティング
 
 ### データベース接続問題
