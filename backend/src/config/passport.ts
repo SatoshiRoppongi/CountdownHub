@@ -153,10 +153,21 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 if (process.env.TWITTER_CONSUMER_KEY && process.env.TWITTER_CONSUMER_SECRET) {
   try {
     const { Strategy: TwitterStrategy } = require('passport-twitter');
+    const callbackURL = process.env.TWITTER_CALLBACK_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'https://api.countdownhub.jp/api/auth/twitter/callback' 
+        : 'http://localhost:3001/api/auth/twitter/callback');
+    
+    console.log('🔧 Twitter OAuth Configuration:', {
+      environment: process.env.NODE_ENV,
+      callbackURL: callbackURL,
+      consumerKey: process.env.TWITTER_CONSUMER_KEY ? '***設定済み***' : '❌未設定'
+    });
+
     passport.use(new TwitterStrategy({
     consumerKey: process.env.TWITTER_CONSUMER_KEY,
     consumerSecret: process.env.TWITTER_CONSUMER_SECRET,
-    callbackURL: process.env.TWITTER_CALLBACK_URL || '/api/auth/twitter/callback',
+    callbackURL: callbackURL,
     includeEmail: true // メールアドレスの取得を有効化
   }, async (token: string, tokenSecret: string, profile: any, done: any) => {
     try {

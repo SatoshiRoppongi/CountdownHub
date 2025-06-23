@@ -535,7 +535,7 @@ export const twitterAuth = passport.authenticate('twitter');
 
 // Twitter OAuth コールバック
 export const twitterCallback = (req: Request, res: Response, next: Function) => {
-  passport.authenticate('twitter', { session: false }, (err: any, user: any) => {
+  passport.authenticate('twitter', { session: true }, (err: any, user: any) => {
     // フロントエンドURLを決定
     const getFrontendUrl = () => {
       return process.env.FRONTEND_URL || 

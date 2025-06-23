@@ -30,7 +30,8 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
         email: true,
         username: true,
         display_name: true,
-        is_active: true
+        is_active: true,
+        is_admin: true
       }
     });
 
@@ -69,7 +70,8 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
         email: true,
         username: true,
         display_name: true,
-        is_active: true
+        is_active: true,
+        is_admin: true
       }
     });
 
@@ -123,3 +125,46 @@ export const developmentMode = async (req: Request, res: Response, next: NextFun
 
 // 管理者認証が必要なルート用（authenticateTokenのエイリアス）
 export const requireAuth = authenticateToken;
+
+// 管理者専用認証ミドルウェア
+export const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    if (!token) {
+      return res.status(401).json({ error: 'アクセストークンが必要です' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as JWTPayload;
+    
+    // ユーザーが存在し、アクティブかつ管理者かチェック
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        display_name: true,
+        is_active: true,
+        is_admin: true
+      }
+    });
+
+    if (!user || !user.is_active) {
+      return res.status(401).json({ error: '無効なトークンです' });
+    }
+
+    if (!user.is_admin) {
+      return res.status(403).json({ error: '管理者権限が必要です' });
+    }
+
+    // リクエストオブジェクトにユーザー情報を追加
+    (req as any).user = user;
+    next();
+
+  } catch (error) {
+    console.error('Admin token verification error:', error);
+    return res.status(403).json({ error: '無効なトークンです' });
+  }
+};
