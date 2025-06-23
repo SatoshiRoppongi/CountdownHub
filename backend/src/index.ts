@@ -17,6 +17,8 @@ import usersRoutes from './routes/users';
 import favoriteRoutes from './routes/favorites';
 import notificationRoutes from './routes/notifications';
 import firebaseAuthRoutes from './routes/firebaseAuth';
+import contactRoutes from './routes/contact';
+import announcementRoutes from './routes/announcements';
 import './config/passport'; // Passport設定を読み込み
 
 const app = express();
@@ -57,6 +59,8 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

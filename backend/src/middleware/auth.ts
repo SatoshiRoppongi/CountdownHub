@@ -120,3 +120,6 @@ export const developmentMode = async (req: Request, res: Response, next: NextFun
   
   next();
 };
+
+// 管理者認証が必要なルート用（authenticateTokenのエイリアス）
+export const requireAuth = authenticateToken;

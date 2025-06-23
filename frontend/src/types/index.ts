@@ -86,3 +86,35 @@ export interface User {
   twitter_id?: string;
   line_id?: string;
 }
+
+export interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  type: AnnouncementType;
+  priority: AnnouncementPriority;
+  is_active: boolean;
+  start_date: string | null;
+  end_date: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  creator?: {
+    id: string;
+    display_name: string;
+    username: string;
+  };
+}
+
+export type AnnouncementType = 'info' | 'maintenance' | 'feature' | 'warning' | 'emergency';
+export type AnnouncementPriority = 'low' | 'normal' | 'high' | 'urgent';
+
+export interface AnnouncementsResponse {
+  announcements: Announcement[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
