@@ -60,6 +60,7 @@ export const EventListPage: React.FC<EventListPageProps> = ({
   // 検索実行時にパネルを自動で閉じる
   useEffect(() => {
     if (filters.search !== undefined) {
+      console.log('🔍 Closing panels due to search:', filters.search);
       setShowAdvancedPanel(false);
       setShowHistoryPanel(false);
       onAdvancedSearchClose?.();
@@ -69,11 +70,17 @@ export const EventListPage: React.FC<EventListPageProps> = ({
 
   // ページ遷移時（location変更時）にパネルを確実に閉じる
   useEffect(() => {
+    console.log('📍 Closing panels due to component mount');
     setShowAdvancedPanel(false);
     setShowHistoryPanel(false);
     onAdvancedSearchClose?.();
     onSearchHistoryClose?.();
   }, [onAdvancedSearchClose, onSearchHistoryClose]);
+
+  // パネル状態をログ出力
+  useEffect(() => {
+    console.log('🎛️ Panel states:', { showAdvancedPanel, showHistoryPanel });
+  }, [showAdvancedPanel, showHistoryPanel]);
 
   const handleAdvancedSearch = (newFilters: EventFilters) => {
     setFilters(newFilters);

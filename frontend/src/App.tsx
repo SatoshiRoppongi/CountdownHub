@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { QueryProvider } from './providers/QueryProvider';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -21,6 +21,7 @@ import { PrivateRoute } from './components/PrivateRoute';
 
 function AppContent() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSearchHistory, setShowSearchHistory] = useState(false);
@@ -31,9 +32,26 @@ function AppContent() {
     setShowSearchHistory(false);
   }, [location.pathname]);
 
+  // URLパラメータから検索クエリを読み取る
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const searchParam = searchParams.get('search');
+    if (searchParam && location.pathname === '/') {
+      setSearchQuery(searchParam);
+    } else if (location.pathname !== '/') {
+      // 他のページに移動した場合は検索クエリをクリア
+      setSearchQuery('');
+    }
+  }, [location.pathname, location.search]);
+
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
-  }, []);
+    
+    // 詳細ページまたは他のページから検索した場合は一覧ページに遷移
+    if (location.pathname !== '/' && query.trim()) {
+      navigate(`/?search=${encodeURIComponent(query.trim())}`);
+    }
+  }, [location.pathname, navigate]);
 
   const handleAdvancedSearch = () => {
     setShowAdvancedSearch(true);
