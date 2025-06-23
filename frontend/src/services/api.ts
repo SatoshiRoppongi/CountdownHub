@@ -1,7 +1,23 @@
 import axios from 'axios';
 import { Event, EventsResponse, Comment, AdminStats, EventFilters } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+// 本番環境での API URL を動的に決定
+const getApiBaseUrl = () => {
+  // 環境変数が設定されている場合はそれを使用
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // 本番環境では現在のホストを使用
+  if (process.env.NODE_ENV === 'production') {
+    return window.location.origin;
+  }
+  
+  // 開発環境ではローカルホストを使用
+  return 'http://localhost:3001';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
@@ -18,6 +34,21 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// レスポンスエラーハンドリング
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // 認証エラーの場合、トークンを削除してログインページにリダイレクト
+      localStorage.removeItem('countdown_hub_token');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const eventAPI = {
   getEvents: async (params: EventFilters & { page?: number; limit?: number } = {}): Promise<EventsResponse> => {
@@ -161,6 +192,19 @@ export const authAPI = {
 
   logout: async (): Promise<{ message: string }> => {
     const response = await api.post('/auth/logout');
+    return response.data;
+  },
+};
+
+export const contactAPI = {
+  submitContact: async (data: {
+    name: string;
+    email: string;
+    subject: string;
+    category: string;
+    message: string;
+  }): Promise<{ message: string; contact: { id: number; created_at: string } }> => {
+    const response = await api.post('/contact', data);
     return response.data;
   },
 };

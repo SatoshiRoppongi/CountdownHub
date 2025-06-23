@@ -17,6 +17,7 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "db:seed": "ts-node prisma/seed.ts",
+    "db:seed-test": "ts-node src/scripts/seedTestData.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
