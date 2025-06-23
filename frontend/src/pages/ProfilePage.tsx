@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { eventAPI, commentAPI } from '../services/api';
+import { eventAPI, commentAPI, authAPI } from '../services/api';
 import { Event, Comment } from '../types';
 import { Link } from 'react-router-dom';
 
@@ -17,11 +17,70 @@ export const ProfilePage: React.FC = () => {
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [newNickname, setNewNickname] = useState(user?.display_name || '');
   const [activeTab, setActiveTab] = useState<'events' | 'comments'>('events');
+  const [nicknameStatus, setNicknameStatus] = useState<'available' | 'unavailable' | 'checking' | null>(null);
+  const [nicknameError, setNicknameError] = useState<string>('');
 
   // ユーザー情報が更新されたときにnewNicknameを同期
   useEffect(() => {
     setNewNickname(user?.display_name || '');
+    setNicknameStatus(null);
+    setNicknameError('');
   }, [user?.display_name]);
+
+  // ニックネーム重複チェック
+  const checkNicknameAvailability = useCallback(
+    async (nickname: string) => {
+      if (!nickname.trim() || nickname.trim() === user?.display_name) {
+        setNicknameStatus(null);
+        setNicknameError('');
+        return;
+      }
+
+      if (nickname.trim().length === 0) {
+        setNicknameStatus('unavailable');
+        setNicknameError('ニックネームを入力してください');
+        return;
+      }
+
+      if (nickname.trim().length > 100) {
+        setNicknameStatus('unavailable');
+        setNicknameError('ニックネームは100文字以下で入力してください');
+        return;
+      }
+
+      setNicknameStatus('checking');
+      setNicknameError('');
+      
+      try {
+        const result = await authAPI.checkDisplayNameAvailability(nickname.trim());
+        setNicknameStatus(result.available ? 'available' : 'unavailable');
+        
+        if (!result.available) {
+          setNicknameError(result.message);
+        }
+      } catch (error) {
+        console.error('Nickname check error:', error);
+        setNicknameStatus(null);
+        setNicknameError('');
+      }
+    },
+    [user?.display_name]
+  );
+
+  // デバウンス処理
+  useEffect(() => {
+    if (!newNickname.trim() || newNickname.trim() === user?.display_name) {
+      setNicknameStatus(null);
+      setNicknameError('');
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      checkNicknameAvailability(newNickname);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [newNickname, checkNicknameAvailability, user?.display_name]);
 
   // ユーザーのイベント一覧を取得
   const { data: userEvents, isLoading: eventsLoading } = useQuery({
@@ -148,6 +207,25 @@ export const ProfilePage: React.FC = () => {
       });
       return;
     }
+
+    if (nicknameStatus === 'unavailable') {
+      showToast({
+        type: 'error',
+        title: 'エラー',
+        message: nicknameError || 'このニックネームは使用できません',
+      });
+      return;
+    }
+
+    if (nicknameStatus === 'checking') {
+      showToast({
+        type: 'warning',
+        title: '確認中',
+        message: 'ニックネームの確認が完了するまでお待ちください',
+      });
+      return;
+    }
+
     updateProfileMutation.mutate({ display_name: newNickname.trim() });
   };
 
@@ -192,30 +270,64 @@ export const ProfilePage: React.FC = () => {
           <div className="flex-1">
             <div className="flex items-center space-x-3 mb-2">
               {isEditingNickname ? (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={newNickname}
-                    onChange={(e) => setNewNickname(e.target.value)}
-                    className="px-3 py-1 border border-gray-300 rounded-lg"
-                    placeholder="ニックネーム"
-                  />
-                  <button
-                    onClick={handleNicknameUpdate}
-                    disabled={updateProfileMutation.isPending}
-                    className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
-                  >
-                    保存
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsEditingNickname(false);
-                      setNewNickname(user.display_name || '');
-                    }}
-                    className="px-3 py-1 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-                  >
-                    キャンセル
-                  </button>
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={newNickname}
+                        onChange={(e) => setNewNickname(e.target.value)}
+                        className={`px-3 py-1 pr-8 border rounded-lg ${
+                          nicknameError 
+                            ? 'border-red-500' 
+                            : nicknameStatus === 'available'
+                            ? 'border-green-500'
+                            : nicknameStatus === 'unavailable'
+                            ? 'border-red-500'
+                            : 'border-gray-300'
+                        }`}
+                        placeholder="ニックネーム"
+                      />
+                      {/* ステータスアイコン */}
+                      <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+                        {nicknameStatus === 'checking' && (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        )}
+                        {nicknameStatus === 'available' && (
+                          <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                        {nicknameStatus === 'unavailable' && (
+                          <svg className="h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleNicknameUpdate}
+                      disabled={updateProfileMutation.isPending || nicknameStatus === 'checking' || nicknameStatus === 'unavailable'}
+                      className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                    >
+                      保存
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditingNickname(false);
+                        setNewNickname(user.display_name || '');
+                        setNicknameStatus(null);
+                        setNicknameError('');
+                      }}
+                      className="px-3 py-1 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                  {nicknameError && <p className="text-red-500 text-sm">{nicknameError}</p>}
+                  {nicknameStatus === 'available' && !nicknameError && (
+                    <p className="text-green-600 text-sm">このニックネームは使用可能です</p>
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center space-x-3">

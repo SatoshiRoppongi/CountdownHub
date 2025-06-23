@@ -18,8 +18,16 @@ const registerSchema = z.object({
     .min(8, 'パスワードは8文字以上で入力してください')
     .max(100, 'パスワードは100文字以下で入力してください'),
   display_name: z.string()
-    .max(100, '表示名は100文字以下で入力してください')
+    .min(1, 'ニックネームを入力してください')
+    .max(100, 'ニックネームは100文字以下で入力してください')
     .optional()
+});
+
+// ニックネーム更新用スキーマ
+const updateDisplayNameSchema = z.object({
+  display_name: z.string()
+    .min(1, 'ニックネームを入力してください')
+    .max(100, 'ニックネームは100文字以下で入力してください')
 });
 
 const loginSchema = z.object({
@@ -33,22 +41,33 @@ export const register = async (req: Request, res: Response) => {
     const validatedData = registerSchema.parse(req.body);
     const { email, username, password, display_name } = validatedData;
 
-    // 既存ユーザーチェック
+    // ニックネームのデフォルト値を生成（空の場合）
+    let finalDisplayName = display_name?.trim();
+    if (!finalDisplayName) {
+      // 一時的なユーザーIDを生成（実際のIDは作成後に決まるため、タイムスタンプを使用）
+      const tempId = Date.now().toString().slice(-6);
+      finalDisplayName = `User${tempId}`;
+    }
+
+    // 既存ユーザーチェック（email, username, display_name）
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
           { email },
-          { username }
+          { username },
+          { display_name: finalDisplayName }
         ]
       }
     });
 
     if (existingUser) {
-      return res.status(400).json({
-        error: existingUser.email === email 
-          ? 'このメールアドレスは既に使用されています' 
-          : 'このユーザー名は既に使用されています'
-      });
+      if (existingUser.email === email) {
+        return res.status(400).json({ error: 'このメールアドレスは既に使用されています' });
+      } else if (existingUser.username === username) {
+        return res.status(400).json({ error: 'このユーザー名は既に使用されています' });
+      } else {
+        return res.status(400).json({ error: 'このニックネームは既に使用されています。異なるニックネームを設定してください。' });
+      }
     }
 
     // パスワードハッシュ化
@@ -56,12 +75,12 @@ export const register = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // ユーザー作成
-    const user = await prisma.user.create({
+    let user = await prisma.user.create({
       data: {
         email,
         username,
         password: hashedPassword,
-        display_name: display_name || username
+        display_name: finalDisplayName
       },
       select: {
         id: true,
@@ -71,6 +90,34 @@ export const register = async (req: Request, res: Response) => {
         created_at: true
       }
     });
+
+    // デフォルトニックネームの場合、実際のユーザーIDを使って更新
+    if (!display_name?.trim()) {
+      const defaultDisplayName = `User${user.id.slice(-6)}`;
+      // 重複チェック
+      const duplicateCheck = await prisma.user.findFirst({
+        where: {
+          AND: [
+            { display_name: defaultDisplayName },
+            { id: { not: user.id } }
+          ]
+        }
+      });
+      
+      if (!duplicateCheck) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { display_name: defaultDisplayName },
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            display_name: true,
+            created_at: true
+          }
+        });
+      }
+    }
 
     // JWTトークン生成
     const token = jwt.sign(
@@ -234,6 +281,53 @@ export const getProfile = async (req: Request, res: Response) => {
   }
 };
 
+// ニックネーム重複チェック
+export const checkDisplayNameAvailability = async (req: Request, res: Response) => {
+  try {
+    const { display_name } = req.query;
+    const userId = (req as any).user?.id;
+
+    if (!display_name || typeof display_name !== 'string') {
+      return res.status(400).json({ error: 'ニックネームを指定してください' });
+    }
+
+    const trimmedDisplayName = display_name.trim();
+    
+    if (trimmedDisplayName.length === 0) {
+      return res.status(400).json({ error: 'ニックネームを入力してください' });
+    }
+
+    if (trimmedDisplayName.length > 100) {
+      return res.status(400).json({ error: 'ニックネームは100文字以下で入力してください' });
+    }
+
+    // 既存ユーザーチェック（自分以外）
+    const existingUser = await prisma.user.findFirst({
+      where: userId ? {
+        AND: [
+          { display_name: trimmedDisplayName },
+          { id: { not: userId } }
+        ]
+      } : {
+        display_name: trimmedDisplayName
+      }
+    });
+
+    res.json({
+      available: !existingUser,
+      message: existingUser 
+        ? 'このニックネームは既に使用されています。異なるニックネームを設定してください。'
+        : 'このニックネームは使用可能です'
+    });
+
+  } catch (error) {
+    console.error('Check display name availability error:', error);
+    res.status(500).json({
+      error: 'ニックネームの確認に失敗しました'
+    });
+  }
+};
+
 // プロフィール更新
 export const updateProfile = async (req: Request, res: Response) => {
   try {
@@ -243,17 +337,31 @@ export const updateProfile = async (req: Request, res: Response) => {
       return res.status(401).json({ error: '認証が必要です' });
     }
 
-    const { display_name } = req.body;
+    const validatedData = updateDisplayNameSchema.parse(req.body);
+    const { display_name } = validatedData;
+    const trimmedDisplayName = display_name.trim();
 
-    if (!display_name || display_name.trim() === '') {
-      return res.status(400).json({ error: 'ニックネームを入力してください' });
+    // ニックネーム重複チェック（自分以外）
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        AND: [
+          { display_name: trimmedDisplayName },
+          { id: { not: userId } }
+        ]
+      }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ 
+        error: 'このニックネームは既に使用されています。異なるニックネームを設定してください。' 
+      });
     }
 
     // ユーザー情報を更新
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
-        display_name: display_name.trim(),
+        display_name: trimmedDisplayName,
         updated_at: new Date()
       },
       select: {
@@ -270,7 +378,7 @@ export const updateProfile = async (req: Request, res: Response) => {
     await prisma.comment.updateMany({
       where: { user_id: userId },
       data: {
-        author_name: display_name.trim(),
+        author_name: trimmedDisplayName,
         updated_at: new Date()
       }
     });
@@ -282,6 +390,17 @@ export const updateProfile = async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error('Update profile error:', error);
+    
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        error: 'バリデーションエラー',
+        details: error.errors.map(err => ({
+          field: err.path.join('.'),
+          message: err.message
+        }))
+      });
+    }
+
     res.status(500).json({
       error: 'プロフィール更新に失敗しました'
     });

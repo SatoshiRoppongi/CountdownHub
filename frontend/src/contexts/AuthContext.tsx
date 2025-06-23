@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { authAPI } from '../services/api';
 
 interface User {
   id: string;
@@ -28,7 +29,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+// const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001'; // authAPIを使用するため不要
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -41,22 +42,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchUserProfile = async (authToken: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-        },
-      });
-
-      if (response.ok) {
-        const { user: userData } = await response.json();
-        setUser(userData);
-      } else {
-        // 無効なトークンの場合、削除
-        localStorage.removeItem('countdown_hub_token');
-        setToken(null);
-      }
+      const data = await authAPI.getProfile();
+      setUser(data.user);
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
+      // 無効なトークンの場合、削除
       localStorage.removeItem('countdown_hub_token');
       setToken(null);
     } finally {
@@ -79,26 +69,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'ログインに失敗しました');
-      }
-
+      const data = await authAPI.login({ email, password });
       setUser(data.user);
       setToken(data.token);
       localStorage.setItem('countdown_hub_token', data.token);
-
-    } catch (error) {
-      throw error;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'ログインに失敗しました');
     } finally {
       setIsLoading(false);
     }
@@ -107,31 +83,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (email: string, username: string, password: string, displayName?: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email,
-          username,
-          password,
-          display_name: displayName
-        })
+      const data = await authAPI.register({
+        email,
+        username,
+        password,
+        display_name: displayName
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'ユーザー登録に失敗しました');
-      }
-
       setUser(data.user);
       setToken(data.token);
       localStorage.setItem('countdown_hub_token', data.token);
-
-    } catch (error) {
-      throw error;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'ユーザー登録に失敗しました');
     } finally {
       setIsLoading(false);
     }
