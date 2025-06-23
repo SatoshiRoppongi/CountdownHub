@@ -14,6 +14,7 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
       search,
       tags,
       venue_type,
+      timeCategory,
       sort_by = 'start_datetime',
       order = 'asc'
     } = req.query;
@@ -40,8 +41,64 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
       where.venue_type = venue_type;
     }
 
-    const orderBy: any = {};
-    orderBy[sort_by as string] = order;
+    // timeCategory filtering
+    if (timeCategory) {
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfTomorrow = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+
+      switch (timeCategory) {
+        case 'today':
+          // 当日未開催 (今日の00:00 <= 開始時刻 < 明日の00:00 and 開始時刻 > 現在時刻)
+          where.start_datetime = {
+            gte: startOfToday,
+            lt: startOfTomorrow
+          };
+          where.OR = [
+            { end_datetime: null, start_datetime: { gt: now } },
+            { end_datetime: { not: null }, start_datetime: { gt: now } }
+          ];
+          break;
+        case 'upcoming':
+          // 明日以降 (開始時刻 >= 明日の00:00)
+          where.start_datetime = {
+            gte: startOfTomorrow
+          };
+          break;
+        case 'ongoing':
+          // 開催中 (開始時刻 <= 現在時刻 < 終了時刻)
+          where.start_datetime = { lte: now };
+          where.OR = [
+            { end_datetime: null },
+            { end_datetime: { gt: now } }
+          ];
+          break;
+        case 'ended':
+          // 終了済み (終了時刻 < 現在時刻)
+          where.OR = [
+            { end_datetime: { lt: now } },
+            { end_datetime: null, start_datetime: { lt: now } }
+          ];
+          break;
+      }
+    }
+
+    let orderBy: any = {};
+    if (sort_by === 'favorites') {
+      orderBy = {
+        favorites: {
+          _count: order
+        }
+      };
+    } else if (sort_by === 'comments') {
+      orderBy = {
+        comments: {
+          _count: order
+        }
+      };
+    } else {
+      orderBy[sort_by as string] = order;
+    }
 
     const [events, total] = await Promise.all([
       prisma.event.findMany({
@@ -51,7 +108,17 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
         take: Number(limit),
         include: {
           _count: {
-            select: { comments: true }
+            select: { 
+              comments: true, 
+              favorites: true 
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              display_name: true,
+              username: true
+            }
           }
         }
       }),
@@ -81,7 +148,17 @@ export const getEventById = async (req: Request, res: Response, next: NextFuncti
       where: { id: Number(id) },
       include: {
         _count: {
-          select: { comments: true }
+          select: { 
+            comments: true, 
+            favorites: true 
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            display_name: true,
+            username: true
+          }
         }
       }
     });
@@ -123,7 +200,22 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
     console.log('Creating event with data:', eventData);
 
     const event = await prisma.event.create({
-      data: eventData
+      data: eventData,
+      include: {
+        _count: {
+          select: { 
+            comments: true, 
+            favorites: true 
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            display_name: true,
+            username: true
+          }
+        }
+      }
     });
 
     res.status(201).json(event);
@@ -163,6 +255,21 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
       data: {
         ...req.body,
         updated_at: new Date()
+      },
+      include: {
+        _count: {
+          select: { 
+            comments: true, 
+            favorites: true 
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            display_name: true,
+            username: true
+          }
+        }
       }
     });
 

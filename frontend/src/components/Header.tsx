@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdmin } from '../hooks/useAdmin';
 import { useToast } from '../contexts/ToastContext';
-import { NotificationBell } from './NotificationBell';
+import { AnnouncementBell } from './AnnouncementBell';
 
 interface HeaderProps {
   searchQuery?: string;
@@ -133,7 +133,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </Link>
                 
                 {/* 通知ベル */}
-                <NotificationBell />
+                <AnnouncementBell />
                 
                 {/* ユーザーメニュー */}
                 <div className="relative">
@@ -185,7 +185,7 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <>
                 <Link
-                  to="/auth"
+                  to="/login"
                   className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-xs sm:text-sm lg:text-base whitespace-nowrap"
                 >
                   ログイン

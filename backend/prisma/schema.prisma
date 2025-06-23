@@ -63,6 +63,7 @@ model User {
   favorites            Favorite[]
   notifications        Notification[]
   notification_settings NotificationSettings?
+  announcements        Announcement[]
 
   @@map("users")
   @@index([email])
@@ -146,6 +147,78 @@ model NotificationSettings {
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("notification_settings")
+}
+
+model Contact {
+  id         Int             @id @default(autoincrement())
+  name       String          @db.VarChar(100)
+  email      String          @db.VarChar(255)
+  subject    String          @db.VarChar(255)
+  category   ContactCategory
+  message    String          @db.Text
+  status     ContactStatus   @default(pending)
+  created_at DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@map("contacts")
+  @@index([status])
+  @@index([category])
+  @@index([created_at])
+}
+
+enum ContactCategory {
+  general
+  technical
+  bug
+  feature
+  account
+  other
+}
+
+enum ContactStatus {
+  pending
+  in_progress
+  resolved
+  closed
+}
+
+model Announcement {
+  id          Int                  @id @default(autoincrement())
+  title       String               @db.VarChar(255)
+  content     String               @db.Text
+  type        AnnouncementType     @default(info)
+  priority    AnnouncementPriority @default(normal)
+  is_active   Boolean              @default(true)
+  start_date  DateTime?            @db.Timestamptz(6) // 表示開始日時
+  end_date    DateTime?            @db.Timestamptz(6) // 表示終了日時
+  created_by  String               @db.VarChar(255) // 作成者ユーザーID
+  created_at  DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime             @default(now()) @updatedAt @db.Timestamptz(6)
+
+  creator User @relation(fields: [created_by], references: [id], onDelete: Cascade)
+
+  @@map("announcements")
+  @@index([is_active])
+  @@index([type])
+  @@index([priority])
+  @@index([start_date])
+  @@index([end_date])
+  @@index([created_by])
+}
+
+enum AnnouncementType {
+  info        // 一般情報
+  maintenance // メンテナンス
+  feature     // 新機能
+  warning     // 警告
+  emergency   // 緊急
+}
+
+enum AnnouncementPriority {
+  low
+  normal
+  high
+  urgent
 }
 
 enum VenueType {

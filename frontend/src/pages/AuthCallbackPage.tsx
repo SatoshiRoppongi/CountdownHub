@@ -36,7 +36,7 @@ export const AuthCallbackPage: React.FC = () => {
           title: '認証エラー',
           message: errorMessage
         });
-        navigate('/auth');
+        navigate('/login');
         return;
       }
 
@@ -59,7 +59,7 @@ export const AuthCallbackPage: React.FC = () => {
             // リダイレクト先を取得（デフォルトはホーム）
             let from = sessionStorage.getItem('auth_redirect') || '/';
             // 認証ページからの場合は強制的にホームにリダイレクト
-            if (from === '/auth') {
+            if (from === '/auth' || from === '/login') {
               from = '/';
             }
             sessionStorage.removeItem('auth_redirect');
@@ -80,7 +80,7 @@ export const AuthCallbackPage: React.FC = () => {
             });
           }
           localStorage.removeItem('countdown_hub_token');
-          navigate('/auth');
+          navigate('/login');
         }
       } else {
         if (!handled) {
@@ -90,7 +90,7 @@ export const AuthCallbackPage: React.FC = () => {
             message: '認証情報が不正です'
           });
         }
-        navigate('/auth');
+        navigate('/login');
       }
     };
 

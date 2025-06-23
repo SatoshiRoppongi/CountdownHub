@@ -13,6 +13,11 @@ export interface Event {
   created_at: string;
   updated_at: string;
   user_id: string | null;
+  user?: {
+    id: string;
+    display_name: string;
+    username: string;
+  };
   _count: {
     comments: number;
     favorites?: number;
@@ -59,6 +64,7 @@ export interface EventFilters {
     start_date: string;
     end_date: string;
   };
+  timeCategory?: 'today' | 'upcoming' | 'ongoing' | 'ended';
 }
 
 export interface AdminStats {
@@ -79,4 +85,36 @@ export interface User {
   github_id?: string;
   twitter_id?: string;
   line_id?: string;
+}
+
+export interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  type: AnnouncementType;
+  priority: AnnouncementPriority;
+  is_active: boolean;
+  start_date: string | null;
+  end_date: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  creator?: {
+    id: string;
+    display_name: string;
+    username: string;
+  };
+}
+
+export type AnnouncementType = 'info' | 'maintenance' | 'feature' | 'warning' | 'emergency';
+export type AnnouncementPriority = 'low' | 'normal' | 'high' | 'urgent';
+
+export interface AnnouncementsResponse {
+  announcements: Announcement[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
