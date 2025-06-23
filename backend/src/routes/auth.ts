@@ -10,7 +10,8 @@ import {
   googleAuth,
   googleCallback,
   linkSocialAccount,
-  unlinkSocialAccount
+  unlinkSocialAccount,
+  checkDisplayNameAvailability
 } from '../controllers/authController';
 import { authenticateToken } from '../middleware/auth';
 
@@ -24,6 +25,9 @@ router.get('/profile', authenticateToken, getProfile);
 router.patch('/profile', authenticateToken, updateProfile);
 router.get('/profile/events', authenticateToken, getUserEvents);
 router.get('/profile/comments', authenticateToken, getUserComments);
+
+// ニックネーム重複チェック
+router.get('/check-display-name', checkDisplayNameAvailability);
 
 // Google OAuth ルート (環境変数が設定されている場合のみ)
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {

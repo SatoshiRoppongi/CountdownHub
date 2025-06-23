@@ -93,15 +93,50 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       counter++;
     }
 
+    // ニックネームの重複チェックとユニークな名前生成
+    let displayName = profile.displayName || profile.name?.givenName || username;
+    let displayNameCounter = 1;
+    while (await prisma.user.findFirst({ where: { display_name: displayName } })) {
+      displayName = `${profile.displayName || profile.name?.givenName || username}_${displayNameCounter}`;
+      displayNameCounter++;
+    }
+
+    // 新規ユーザー作成（一時的にデフォルト名で作成）
     user = await prisma.user.create({
       data: {
         email,
         username,
-        display_name: profile.displayName || profile.name?.givenName || username,
+        display_name: `TempUser${Date.now()}`, // 一時的な名前
         avatar_url: profile.photos?.[0]?.value,
         google_id: profile.id,
         auth_provider: 'google',
         password: null // ソーシャルログインユーザーはパスワードなし
+      }
+    });
+
+    // 実際のユーザーIDを使ってデフォルトニックネームを生成
+    const defaultDisplayName = `User${user.id.slice(-6)}`;
+    
+    // 重複チェック
+    const duplicateCheck = await prisma.user.findFirst({
+      where: { 
+        AND: [
+          { display_name: defaultDisplayName },
+          { id: { not: user.id } }
+        ]
+      }
+    });
+    
+    let finalDisplayName = defaultDisplayName;
+    if (duplicateCheck) {
+      finalDisplayName = displayName; // 重複する場合は上記で生成したユニーク名を使用
+    }
+    
+    // ニックネームを更新
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        display_name: finalDisplayName
       }
     });
 
