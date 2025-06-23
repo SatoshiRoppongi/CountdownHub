@@ -109,10 +109,37 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
 
   const popularTags = getPopularTags();
 
+  // Escapeキーでパネルを閉じる
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // モーダル表示時のスクロール防止
+      document.body.style.overflow = 'hidden';
+    } else {
+      // パネルが閉じられた時に確実にスクロールを復元
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      // クリーンアップ時も確実にスクロールを復元
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* ヘッダー */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200">

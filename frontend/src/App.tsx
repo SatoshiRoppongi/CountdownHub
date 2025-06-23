@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useCallback, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryProvider } from './providers/QueryProvider';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -20,13 +20,20 @@ import { FAQPage } from './pages/FAQPage';
 import { PrivateRoute } from './components/PrivateRoute';
 
 function AppContent() {
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSearchHistory, setShowSearchHistory] = useState(false);
 
-  const handleSearchChange = (query: string) => {
+  // パス変更時にパネルを閉じる
+  useEffect(() => {
+    setShowAdvancedSearch(false);
+    setShowSearchHistory(false);
+  }, [location.pathname]);
+
+  const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
-  };
+  }, []);
 
   const handleAdvancedSearch = () => {
     setShowAdvancedSearch(true);

@@ -57,6 +57,16 @@ export const EventListPage: React.FC<EventListPageProps> = ({
     }
   }, [showSearchHistory]);
 
+  // 検索実行時にパネルを自動で閉じる（検索が実際に発生した時のみ）
+  useEffect(() => {
+    if (filters.search && filters.search.length > 0) {
+      setShowAdvancedPanel(false);
+      setShowHistoryPanel(false);
+      onAdvancedSearchClose?.();
+      onSearchHistoryClose?.();
+    }
+  }, [filters.search, onAdvancedSearchClose, onSearchHistoryClose]);
+
   const handleAdvancedSearch = (newFilters: EventFilters) => {
     setFilters(newFilters);
     setCurrentPage(1); // フィルター変更時はページをリセット
