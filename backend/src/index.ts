@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+// セッション型定義はd.tsファイルで自動読み込み
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -131,7 +133,7 @@ if (process.env.NODE_ENV === 'production') {
       console.log('🔍 Twitter OAuth Request:', {
         method: req.method,
         path: req.path,
-        sessionID: req.sessionID,
+        sessionID: req.sessionID || 'not available',
         sessionExists: !!req.session,
         sessionData: req.session ? Object.keys(req.session) : 'no session',
         cookies: req.headers.cookie ? 'present' : 'missing'

@@ -25,6 +25,9 @@ export const authenticateUnifiedToken = async (req: Request, res: Response, next
 
     try {
       // Try Firebase token first
+      if (!adminAuth) {
+        throw new Error('Firebase admin not configured');
+      }
       const decodedToken = await adminAuth.verifyIdToken(token);
       
       // Get user from database using Firebase UID
@@ -90,6 +93,9 @@ export const optionalUnifiedAuth = async (req: Request, res: Response, next: Nex
 
     try {
       // Try Firebase token first
+      if (!adminAuth) {
+        throw new Error('Firebase admin not configured');
+      }
       const decodedToken = await adminAuth.verifyIdToken(token);
       
       user = await prisma.user.findUnique({
