@@ -121,10 +121,14 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
       document.addEventListener('keydown', handleEscape);
       // モーダル表示時のスクロール防止
       document.body.style.overflow = 'hidden';
+    } else {
+      // パネルが閉じられた時に確実にスクロールを復元
+      document.body.style.overflow = 'unset';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
+      // クリーンアップ時も確実にスクロールを復元
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);

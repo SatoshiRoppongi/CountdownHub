@@ -547,11 +547,11 @@ export const twitterAuth = async (req: Request, res: Response) => {
     // リクエストトークンを取得
     const { oauth_token, oauth_token_secret } = await customTwitterOAuth.getRequestToken();
     
-    // カスタムストレージに保存
-    const storeKey = twitterOAuthStore.storeRequestToken(oauth_token, oauth_token_secret);
+    // カスタムストレージに保存（oauth_tokenをキーとして使用）
+    twitterOAuthStore.storeRequestToken(oauth_token, oauth_token_secret);
     
-    // 認証URLにリダイレクト（storeKeyをstateパラメータとして追加）
-    const authUrl = `https://api.twitter.com/oauth/authenticate?oauth_token=${oauth_token}&state=${storeKey}`;
+    // 認証URLにリダイレクト（OAuth 1.0aなのでstateパラメータは使用しない）
+    const authUrl = `https://api.twitter.com/oauth/authenticate?oauth_token=${oauth_token}`;
     console.log('🔗 Redirecting to Twitter auth URL:', authUrl);
     
     res.redirect(authUrl);
@@ -592,11 +592,11 @@ export const twitterCallback = async (req: Request, res: Response) => {
       return res.redirect(`${frontendUrl}/login?error=oauth_params_missing`);
     }
 
-    // カスタムストレージからリクエストトークンを取得
-    const requestTokenData = twitterOAuthStore.getRequestToken(state || `fallback_${oauth_token}`);
+    // カスタムストレージからリクエストトークンを取得（oauth_tokenをキーとして使用）
+    const requestTokenData = twitterOAuthStore.getRequestToken(oauth_token);
     
     if (!requestTokenData) {
-      console.error('❌ Request token not found in custom store');
+      console.error('❌ Request token not found in custom store for oauth_token:', oauth_token);
       return res.redirect(`${frontendUrl}/login?error=oauth_token_not_found`);
     }
 
@@ -617,7 +617,7 @@ export const twitterCallback = async (req: Request, res: Response) => {
     const user = await customTwitterOAuth.handleUser(twitterUserInfo);
 
     // ストレージからリクエストトークンを削除
-    twitterOAuthStore.removeRequestToken(state || `fallback_${oauth_token}`);
+    twitterOAuthStore.removeRequestToken(oauth_token);
 
     // JWTトークン生成
     const token = jwt.sign(

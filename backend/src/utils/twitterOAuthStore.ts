@@ -25,19 +25,18 @@ class TwitterOAuthStore {
     return TwitterOAuthStore.instance;
   }
 
-  // リクエストトークンを保存
+  // リクエストトークンを保存（oauth_tokenをキーとして使用）
   storeRequestToken(token: string, tokenSecret: string): string {
-    const key = this.generateKey();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15分後に期限切れ
 
-    this.tokens.set(key, {
+    this.tokens.set(token, {
       token,
       tokenSecret,
       expiresAt
     });
 
-    console.log('🔐 Stored Twitter request token:', { key, token: token.substring(0, 10) + '...', expiresAt });
-    return key;
+    console.log('🔐 Stored Twitter request token:', { key: token.substring(0, 10) + '...', token: token.substring(0, 10) + '...', expiresAt });
+    return token;
   }
 
   // リクエストトークンを取得

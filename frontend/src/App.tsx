@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryProvider } from './providers/QueryProvider';
 import { ToastProvider } from './contexts/ToastContext';
@@ -24,9 +24,6 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSearchHistory, setShowSearchHistory] = useState(false);
-  
-  // デバウンス用のタイマー参照
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // パス変更時にパネルを閉じる
   useEffect(() => {
@@ -35,15 +32,7 @@ function AppContent() {
   }, [location.pathname]);
 
   const handleSearchChange = useCallback((query: string) => {
-    // 既存のタイマーをクリア
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    
-    // デバウンス処理（300ms後に実行）
-    debounceTimerRef.current = setTimeout(() => {
-      setSearchQuery(query);
-    }, 300);
+    setSearchQuery(query);
   }, []);
 
   const handleAdvancedSearch = () => {
