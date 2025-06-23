@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { eventAPI, commentAPI, authAPI } from '../services/api';
+import { eventAPI, commentAPI, authAPI, userAPI } from '../services/api';
 import { Event, Comment } from '../types';
 import { Link } from 'react-router-dom';
 
 interface UserProfileUpdate {
-  display_name?: string;
+  display_name: string;
 }
 
 export const ProfilePage: React.FC = () => {
@@ -85,52 +85,20 @@ export const ProfilePage: React.FC = () => {
   // ユーザーのイベント一覧を取得
   const { data: userEvents, isLoading: eventsLoading } = useQuery({
     queryKey: ['user-events'],
-    queryFn: async () => {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/events`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error('Failed to fetch user events');
-      return response.json();
-    },
+    queryFn: () => userAPI.getUserEvents(),
     enabled: !!token,
   });
 
   // ユーザーのコメント一覧を取得
   const { data: userComments, isLoading: commentsLoading } = useQuery({
     queryKey: ['user-comments'],
-    queryFn: async () => {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/comments`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error('Failed to fetch user comments');
-      return response.json();
-    },
+    queryFn: () => userAPI.getUserComments(),
     enabled: !!token,
   });
 
   // プロフィール更新
   const updateProfileMutation = useMutation({
-    mutationFn: async (profileData: UserProfileUpdate) => {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiUrl}/api/auth/profile`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(profileData),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
-      
-      return response.json();
-    },
+    mutationFn: (profileData: UserProfileUpdate) => authAPI.updateProfile(profileData),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       queryClient.invalidateQueries({ queryKey: ['user-comments'] });
@@ -384,7 +352,7 @@ export const ProfilePage: React.FC = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
                   <p className="mt-2 text-gray-600">イベントを読み込み中...</p>
                 </div>
-              ) : userEvents?.events?.length > 0 ? (
+              ) : userEvents?.events && userEvents.events.length > 0 ? (
                 <div className="space-y-4">
                   {userEvents.events.map((event: Event) => (
                     <div key={event.id} className="border border-gray-200 rounded-lg p-4">
@@ -443,9 +411,9 @@ export const ProfilePage: React.FC = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
                   <p className="mt-2 text-gray-600">コメントを読み込み中...</p>
                 </div>
-              ) : userComments?.comments?.length > 0 ? (
+              ) : userComments?.comments && userComments.comments.length > 0 ? (
                 <div className="space-y-4">
-                  {userComments.comments.map((comment: Comment & { event: Event }) => (
+                  {userComments.comments.map((comment) => (
                     <div key={comment.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">

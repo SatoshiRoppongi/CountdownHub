@@ -196,6 +196,18 @@ export const authAPI = {
   },
 };
 
+export const userAPI = {
+  getUserEvents: async (): Promise<{ events: Event[] }> => {
+    const response = await api.get('/users/events');
+    return response.data;
+  },
+
+  getUserComments: async (): Promise<{ comments: (Comment & { event: { id: number; title: string } })[] }> => {
+    const response = await api.get('/users/comments');
+    return response.data;
+  },
+};
+
 export const contactAPI = {
   submitContact: async (data: {
     name: string;
