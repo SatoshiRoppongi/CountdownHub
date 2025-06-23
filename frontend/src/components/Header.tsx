@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdmin } from '../hooks/useAdmin';
@@ -25,7 +25,6 @@ export const Header: React.FC<HeaderProps> = ({
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Google OAuthログイン成功の検知
   useEffect(() => {
@@ -47,21 +46,12 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const handleSearchChange = useCallback((value: string) => {
+  const handleSearchChange = (value: string) => {
     setLocalSearchQuery(value);
-    
-    // 既存のタイマーをクリア
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
+    if (onSearchChange) {
+      onSearchChange(value);
     }
-    
-    // デバウンス処理（300ms後に実行）
-    debounceTimerRef.current = setTimeout(() => {
-      if (onSearchChange) {
-        onSearchChange(value);
-      }
-    }, 300);
-  }, [onSearchChange]);
+  };
 
   return (
     <header className="bg-white shadow-md border-b">

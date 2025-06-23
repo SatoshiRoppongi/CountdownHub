@@ -6,8 +6,9 @@ export const useEvents = (filters: EventFilters & { page?: number; limit?: numbe
   return useQuery<EventsResponse>({
     queryKey: ['events', filters],
     queryFn: () => eventAPI.getEvents(filters),
-    staleTime: 2000, // 2秒間はキャッシュデータを使用
+    staleTime: 5000, // 5秒間はキャッシュデータを使用（デバウンス期間を考慮）
     refetchOnWindowFocus: false, // ウィンドウフォーカス時の自動リフェッチを無効
+    enabled: !!filters, // filtersが存在する場合のみクエリを実行
     select: (data) => ({
       ...data,
       events: data.events.map(event => ({

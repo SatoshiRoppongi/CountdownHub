@@ -123,15 +123,22 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
       document.body.style.overflow = 'hidden';
     } else {
       // パネルが閉じられた時に確実にスクロールを復元
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
       // クリーンアップ時も確実にスクロールを復元
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
     };
   }, [isOpen, onClose]);
+
+  // コンポーネントアンマウント時の確実なクリーンアップ
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   if (!isOpen) return null;
 
