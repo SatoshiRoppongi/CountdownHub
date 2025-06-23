@@ -14,29 +14,73 @@ class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    // 開発環境では Ethereal Email (テスト用) を使用
-    // 本番環境では実際のSMTPサーバーを使用
+    // 環境に応じたSMTP設定
     if (process.env.NODE_ENV === 'production') {
-      this.transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
+      // 本番環境では環境変数から設定を取得
+      const smtpHost = process.env.SMTP_HOST;
+      const smtpUser = process.env.SMTP_USER;
+      const smtpPass = process.env.SMTP_PASS;
+      
+      console.log('📧 [本番環境] SMTP設定確認:', {
+        host: smtpHost ? '設定済み' : '未設定',
+        user: smtpUser ? '設定済み' : '未設定',
+        pass: smtpPass ? '設定済み' : '未設定'
       });
+      
+      if (!smtpHost || !smtpUser || !smtpPass) {
+        console.warn('⚠️ [本番環境] SMTP環境変数が不足しています。メール送信を無効化します。');
+        // 環境変数が不足している場合はダミートランスポーターを作成
+        this.transporter = nodemailer.createTransport({
+          jsonTransport: true
+        });
+      } else {
+        // Gmail SMTP設定（他のSMTPサービスも対応）
+        this.transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+          // Gmail固有の設定
+          ...(smtpHost === 'smtp.gmail.com' && {
+            service: 'gmail',
+            tls: {
+              rejectUnauthorized: false
+            }
+          })
+        });
+      }
     } else {
-      // 開発環境用のテスト設定（実際にメールは送信されない）
-      this.transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        auth: {
-          user: 'ethereal.user@ethereal.email',
-          pass: 'ethereal.pass',
-        },
-      });
+      // 開発環境用のテスト設定
+      if (process.env.ENABLE_EMAIL_IN_DEV === 'true') {
+        console.log('📧 [開発環境] 実際のメール送信を有効化');
+        this.transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          },
+          service: 'gmail',
+          tls: {
+            rejectUnauthorized: false
+          }
+        });
+      } else {
+        console.log('📧 [開発環境] テスト用SMTP設定');
+        this.transporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          auth: {
+            user: 'ethereal.user@ethereal.email',
+            pass: 'ethereal.pass',
+          },
+        });
+      }
     }
   }
 
@@ -203,16 +247,41 @@ class EmailService {
         }
       } else {
         // 本番環境では実際にメール送信
-        await Promise.all([
-          this.transporter.sendMail(adminMailOptions),
-          this.transporter.sendMail(userMailOptions)
-        ]);
+        const smtpHost = process.env.SMTP_HOST;
+        const smtpUser = process.env.SMTP_USER;
+        const smtpPass = process.env.SMTP_PASS;
         
-        console.log('📧 メール送信完了:', {
-          contactId: data.contactId,
-          adminEmail: adminMailOptions.to,
-          userEmail: userMailOptions.to
-        });
+        if (!smtpHost || !smtpUser || !smtpPass) {
+          console.log('📧 [本番環境] SMTP設定が不完全のため、メール送信をスキップ:', {
+            contactId: data.contactId,
+            adminEmail: adminMailOptions.to,
+            userEmail: userMailOptions.to,
+            message: 'SMTP環境変数を設定してください'
+          });
+          return; // メール送信をスキップ
+        }
+        
+        try {
+          await Promise.all([
+            this.transporter.sendMail(adminMailOptions),
+            this.transporter.sendMail(userMailOptions)
+          ]);
+          
+          console.log('📧 メール送信完了:', {
+            contactId: data.contactId,
+            adminEmail: adminMailOptions.to,
+            userEmail: userMailOptions.to
+          });
+        } catch (emailError: any) {
+          console.error('📧 [本番環境] メール送信エラー:', {
+            error: emailError.message,
+            code: emailError.code,
+            contactId: data.contactId
+          });
+          
+          // 本番環境でもメール送信エラーは致命的ではない
+          throw new Error(`メール送信に失敗しました: ${emailError.message}`);
+        }
       }
     } catch (error) {
       console.error('📧 メール送信エラー:', error);
