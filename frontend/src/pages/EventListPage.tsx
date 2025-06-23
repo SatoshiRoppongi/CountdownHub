@@ -198,45 +198,19 @@ export const EventListPage: React.FC<EventListPageProps> = ({
       />
 
       {/* イベントタブ（ページネーション付き） */}
-      {events.length > 0 ? (
-        <EventTimeTabsWithPagination
-          events={events}
-          searchTerm={filters.search}
-          totalEvents={totalEvents}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          itemsPerPage={itemsPerPage}
-          onPageChange={handlePageChange}
-          onSortChange={handleSortChange}
-          currentSort={currentSort}
-          activeTimeCategory={activeTimeCategory}
-          onTimeCategoryChange={handleTimeCategoryChange}
-        />
-      ) : (
-        <div className="text-center py-12 bg-white rounded-lg shadow-md">
-          <div className="text-6xl mb-4">📅</div>
-          <h3 className="text-xl font-medium text-gray-900 mb-2">
-            {(filters.search || filters.tags?.length || filters.venue_type || filters.dateRange) 
-              ? 'イベントが見つかりません' 
-              : 'イベントが登録されていません'
-            }
-          </h3>
-          <p className="text-gray-600">
-            {(filters.search || filters.tags?.length || filters.venue_type || filters.dateRange)
-              ? '検索条件を変更してお試しください。'
-              : '新しいイベントが追加されるまでお待ちください。'
-            }
-          </p>
-          {(filters.search || filters.tags?.length || filters.venue_type || filters.dateRange) && (
-            <button
-              onClick={handleClearAllFilters}
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              すべての検索条件をクリア
-            </button>
-          )}
-        </div>
-      )}
+      <EventTimeTabsWithPagination
+        events={events}
+        searchTerm={filters.search}
+        totalEvents={totalEvents}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        itemsPerPage={itemsPerPage}
+        onPageChange={handlePageChange}
+        onSortChange={handleSortChange}
+        currentSort={currentSort}
+        activeTimeCategory={activeTimeCategory}
+        onTimeCategoryChange={handleTimeCategoryChange}
+      />
 
       {/* 高度検索パネル */}
       <AdvancedSearchPanel
