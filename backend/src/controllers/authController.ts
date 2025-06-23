@@ -499,11 +499,11 @@ export const googleCallback = (req: Request, res: Response, next: Function) => {
 
     if (err) {
       console.error('Google OAuth callback error:', err);
-      return res.redirect(`${getFrontendUrl()}/auth?error=oauth_error`);
+      return res.redirect(`${getFrontendUrl()}/login?error=oauth_error`);
     }
 
     if (!user) {
-      return res.redirect(`${getFrontendUrl()}/auth?error=oauth_failed`);
+      return res.redirect(`${getFrontendUrl()}/login?error=oauth_failed`);
     }
 
     try {
@@ -525,7 +525,7 @@ export const googleCallback = (req: Request, res: Response, next: Function) => {
 
     } catch (error) {
       console.error('Token generation error:', error);
-      res.redirect(`${getFrontendUrl()}/auth?error=token_error`);
+      res.redirect(`${getFrontendUrl()}/login?error=token_error`);
     }
   })(req, res, next);
 };

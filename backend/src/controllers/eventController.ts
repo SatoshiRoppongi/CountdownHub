@@ -40,8 +40,22 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
       where.venue_type = venue_type;
     }
 
-    const orderBy: any = {};
-    orderBy[sort_by as string] = order;
+    let orderBy: any = {};
+    if (sort_by === 'favorites') {
+      orderBy = {
+        favorites: {
+          _count: order
+        }
+      };
+    } else if (sort_by === 'comments') {
+      orderBy = {
+        comments: {
+          _count: order
+        }
+      };
+    } else {
+      orderBy[sort_by as string] = order;
+    }
 
     const [events, total] = await Promise.all([
       prisma.event.findMany({
@@ -51,7 +65,17 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
         take: Number(limit),
         include: {
           _count: {
-            select: { comments: true }
+            select: { 
+              comments: true, 
+              favorites: true 
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              display_name: true,
+              username: true
+            }
           }
         }
       }),
@@ -81,7 +105,17 @@ export const getEventById = async (req: Request, res: Response, next: NextFuncti
       where: { id: Number(id) },
       include: {
         _count: {
-          select: { comments: true }
+          select: { 
+            comments: true, 
+            favorites: true 
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            display_name: true,
+            username: true
+          }
         }
       }
     });
@@ -123,7 +157,22 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
     console.log('Creating event with data:', eventData);
 
     const event = await prisma.event.create({
-      data: eventData
+      data: eventData,
+      include: {
+        _count: {
+          select: { 
+            comments: true, 
+            favorites: true 
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            display_name: true,
+            username: true
+          }
+        }
+      }
     });
 
     res.status(201).json(event);
@@ -163,6 +212,21 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
       data: {
         ...req.body,
         updated_at: new Date()
+      },
+      include: {
+        _count: {
+          select: { 
+            comments: true, 
+            favorites: true 
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            display_name: true,
+            username: true
+          }
+        }
       }
     });
 
