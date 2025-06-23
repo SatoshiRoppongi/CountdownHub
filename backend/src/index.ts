@@ -96,16 +96,21 @@ app.use(express.urlencoded({ extended: true }));
 // セッション設定（Twitter OAuth用）
 const sessionConfig = {
   secret: process.env.SESSION_SECRET || 'your-session-secret-change-this-in-production',
-  resave: false,
+  resave: true, // 本番環境でのセッション保持を強制
   saveUninitialized: true, // Twitter OAuth 1.0aでは必須
   name: 'countdownhub.sid', // セッション名を明示的に設定
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // 本番環境ではHTTPS必須
+    secure: process.env.NODE_ENV === 'production' && process.env.TWITTER_OAUTH_SECURE !== 'false', // 本番環境ではHTTPS必須（ただしTwitter OAuth時は一時的に無効化可能）
     httpOnly: true,
-    maxAge: 1000 * 60 * 30, // 30分に延長（OAuth処理時間を考慮）
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'lax' as const, // 本番環境でのクロスサイトセッション対応
-    domain: process.env.NODE_ENV === 'production' ? '.countdownhub.jp' : undefined // 本番環境でのドメイン設定
-  }
+    maxAge: 1000 * 60 * 60, // 1時間に延長（Render環境でのタイムアウト対策）
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' as const : 'lax' as const, // 本番環境でもlaxに変更（Twitter OAuth互換性）
+    domain: undefined // ドメイン設定を無効化（Render環境対応）
+  },
+  // 本番環境でのセッション永続化設定
+  ...(process.env.NODE_ENV === 'production' && {
+    rolling: true, // アクティブセッションの自動延長
+    unset: 'keep' as const // セッション削除時の動作
+  })
 };
 
 console.log('🔧 Session Configuration:', {
@@ -118,6 +123,23 @@ console.log('🔧 Session Configuration:', {
 });
 
 app.use(session(sessionConfig));
+
+// セッションデバッグミドルウェア（本番環境のみ）
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    if (req.path.includes('/auth/twitter')) {
+      console.log('🔍 Twitter OAuth Request:', {
+        method: req.method,
+        path: req.path,
+        sessionID: req.sessionID,
+        sessionExists: !!req.session,
+        sessionData: req.session ? Object.keys(req.session) : 'no session',
+        cookies: req.headers.cookie ? 'present' : 'missing'
+      });
+    }
+    next();
+  });
+}
 
 app.use(passport.initialize());
 app.use(passport.session());
