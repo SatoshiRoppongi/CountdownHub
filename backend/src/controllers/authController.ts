@@ -530,49 +530,116 @@ export const googleCallback = (req: Request, res: Response, next: Function) => {
   })(req, res, next);
 };
 
-// Twitter OAuth 開始
-export const twitterAuth = passport.authenticate('twitter');
+// カスタムTwitter OAuth実装をインポート
+import { customTwitterOAuth } from '../strategies/customTwitterStrategy';
+import { twitterOAuthStore } from '../utils/twitterOAuthStore';
 
-// Twitter OAuth コールバック
-export const twitterCallback = (req: Request, res: Response, next: Function) => {
-  passport.authenticate('twitter', { session: true }, (err: any, user: any) => {
-    // フロントエンドURLを決定
-    const getFrontendUrl = () => {
-      return process.env.FRONTEND_URL || 
-             (process.env.NODE_ENV === 'production' ? 'https://countdownhub.jp' : 'http://localhost:3000');
-    };
-
-    if (err) {
-      console.error('Twitter OAuth callback error:', err);
-      return res.redirect(`${getFrontendUrl()}/login?error=oauth_error`);
+// Twitter OAuth 開始 (カスタム実装)
+export const twitterAuth = async (req: Request, res: Response) => {
+  try {
+    console.log('🐦 Starting custom Twitter OAuth...');
+    
+    if (!process.env.TWITTER_CONSUMER_KEY || !process.env.TWITTER_CONSUMER_SECRET) {
+      console.error('❌ Twitter OAuth credentials not configured');
+      return res.status(500).json({ error: 'Twitter OAuth not configured' });
     }
 
-    if (!user) {
-      return res.redirect(`${getFrontendUrl()}/login?error=oauth_failed`);
+    // リクエストトークンを取得
+    const { oauth_token, oauth_token_secret } = await customTwitterOAuth.getRequestToken();
+    
+    // カスタムストレージに保存
+    const storeKey = twitterOAuthStore.storeRequestToken(oauth_token, oauth_token_secret);
+    
+    // 認証URLにリダイレクト（storeKeyをstateパラメータとして追加）
+    const authUrl = `https://api.twitter.com/oauth/authenticate?oauth_token=${oauth_token}&state=${storeKey}`;
+    console.log('🔗 Redirecting to Twitter auth URL:', authUrl);
+    
+    res.redirect(authUrl);
+    
+  } catch (error) {
+    console.error('❌ Custom Twitter OAuth start error:', error);
+    const frontendUrl = process.env.FRONTEND_URL || 
+      (process.env.NODE_ENV === 'production' ? 'https://countdownhub.jp' : 'http://localhost:3000');
+    res.redirect(`${frontendUrl}/login?error=twitter_oauth_start_failed`);
+  }
+};
+
+// Twitter OAuth コールバック (カスタム実装)
+export const twitterCallback = async (req: Request, res: Response) => {
+  try {
+    console.log('🐦 Twitter OAuth callback received:', {
+      oauth_token: req.query.oauth_token,
+      oauth_verifier: req.query.oauth_verifier,
+      state: req.query.state,
+      denied: req.query.denied
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 
+      (process.env.NODE_ENV === 'production' ? 'https://countdownhub.jp' : 'http://localhost:3000');
+
+    // OAuth拒否の場合
+    if (req.query.denied) {
+      console.log('❌ Twitter OAuth was denied by user');
+      return res.redirect(`${frontendUrl}/login?error=oauth_denied`);
     }
 
-    try {
-      // JWTトークン生成
-      const token = jwt.sign(
-        { 
-          userId: user.id, 
-          email: user.email,
-          username: user.username 
-        },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '7d' }
-      );
+    const oauth_token = req.query.oauth_token as string;
+    const oauth_verifier = req.query.oauth_verifier as string;
+    const state = req.query.state as string;
 
-      // フロントエンドにリダイレクト（トークンをクエリパラメータで渡す）
-      const frontendUrl = getFrontendUrl();
-      console.log('Twitter OAuth callback - redirecting to:', `${frontendUrl}/auth/callback?token=${token}&provider=twitter`);
-      res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=twitter`);
-
-    } catch (error) {
-      console.error('Token generation error:', error);
-      res.redirect(`${getFrontendUrl()}/login?error=token_error`);
+    if (!oauth_token || !oauth_verifier) {
+      console.error('❌ Missing OAuth parameters');
+      return res.redirect(`${frontendUrl}/login?error=oauth_params_missing`);
     }
-  })(req, res, next);
+
+    // カスタムストレージからリクエストトークンを取得
+    const requestTokenData = twitterOAuthStore.getRequestToken(state || `fallback_${oauth_token}`);
+    
+    if (!requestTokenData) {
+      console.error('❌ Request token not found in custom store');
+      return res.redirect(`${frontendUrl}/login?error=oauth_token_not_found`);
+    }
+
+    // アクセストークンを取得
+    const accessTokenData = await customTwitterOAuth.getAccessToken(
+      requestTokenData.token,
+      requestTokenData.tokenSecret,
+      oauth_verifier
+    );
+
+    // ユーザー情報を取得
+    const twitterUserInfo = await customTwitterOAuth.getUserInfo(
+      accessTokenData.oauth_access_token,
+      accessTokenData.oauth_access_token_secret
+    );
+
+    // データベースでユーザーを処理
+    const user = await customTwitterOAuth.handleUser(twitterUserInfo);
+
+    // ストレージからリクエストトークンを削除
+    twitterOAuthStore.removeRequestToken(state || `fallback_${oauth_token}`);
+
+    // JWTトークン生成
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email,
+        username: user.username 
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    );
+
+    // フロントエンドにリダイレクト
+    console.log('✅ Custom Twitter OAuth success - redirecting to:', `${frontendUrl}/auth/callback?token=${token}&provider=twitter`);
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=twitter`);
+
+  } catch (error) {
+    console.error('❌ Custom Twitter OAuth callback error:', error);
+    const frontendUrl = process.env.FRONTEND_URL || 
+      (process.env.NODE_ENV === 'production' ? 'https://countdownhub.jp' : 'http://localhost:3000');
+    res.redirect(`${frontendUrl}/login?error=oauth_callback_failed`);
+  }
 };
 
 // ソーシャルログイン用のアカウント連携
