@@ -23,7 +23,7 @@ export const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
 
   if (!user) {
     // 認証が必要なページにアクセスしようとした場合、ログインページにリダイレクト
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;

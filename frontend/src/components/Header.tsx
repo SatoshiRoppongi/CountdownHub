@@ -185,7 +185,7 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <>
                 <Link
-                  to="/auth"
+                  to="/login"
                   className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-xs sm:text-sm lg:text-base whitespace-nowrap"
                 >
                   ログイン

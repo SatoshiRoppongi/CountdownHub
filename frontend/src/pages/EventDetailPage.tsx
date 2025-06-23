@@ -298,9 +298,17 @@ export const EventDetailPage: React.FC = () => {
           )}
 
           {/* メタ情報 */}
-          <div className="pt-6 text-sm text-gray-500">
-            <div className="text-right">
-              作成日: {new Date(event.created_at).toLocaleDateString('ja-JP')}
+          <div className="pt-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-2 text-sm text-gray-500">
+              <div className="flex items-center space-x-2">
+                <span>作成者:</span>
+                <span className="font-medium text-gray-700">
+                  {event.user?.display_name || event.user?.username || '不明'}
+                </span>
+              </div>
+              <div>
+                作成日: {new Date(event.created_at).toLocaleDateString('ja-JP')}
+              </div>
             </div>
           </div>
         </div>

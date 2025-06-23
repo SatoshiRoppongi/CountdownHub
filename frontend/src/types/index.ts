@@ -13,6 +13,11 @@ export interface Event {
   created_at: string;
   updated_at: string;
   user_id: string | null;
+  user?: {
+    id: string;
+    display_name: string;
+    username: string;
+  };
   _count: {
     comments: number;
     favorites?: number;
