@@ -9,6 +9,8 @@ import {
   logout,
   googleAuth,
   googleCallback,
+  twitterAuth,
+  twitterCallback,
   linkSocialAccount,
   unlinkSocialAccount,
   checkDisplayNameAvailability
@@ -46,9 +48,27 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   });
 }
 
+// Twitter OAuth ルート (環境変数が設定されている場合のみ)
+if (process.env.TWITTER_CONSUMER_KEY && process.env.TWITTER_CONSUMER_SECRET) {
+  router.get('/twitter', twitterAuth);
+  router.get('/twitter/callback', twitterCallback);
+} else {
+  router.get('/twitter', (req, res) => {
+    res.status(501).json({ 
+      error: 'Twitter OAuth is not configured. Please set TWITTER_CONSUMER_KEY and TWITTER_CONSUMER_SECRET environment variables.' 
+    });
+  });
+  router.get('/twitter/callback', (req, res) => {
+    res.status(501).json({ 
+      error: 'Twitter OAuth is not configured.' 
+    });
+  });
+}
+
 // OAuth設定状況確認
 router.get('/oauth-status', (req, res) => {
   const googleConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  const twitterConfigured = !!(process.env.TWITTER_CONSUMER_KEY && process.env.TWITTER_CONSUMER_SECRET);
   
   res.json({
     google: {
@@ -60,11 +80,20 @@ router.get('/oauth-status', (req, res) => {
         ? 'Google OAuth is properly configured' 
         : 'Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env file'
     },
+    twitter: {
+      configured: twitterConfigured,
+      consumerKey: process.env.TWITTER_CONSUMER_KEY || 'not set',
+      consumerSecret: process.env.TWITTER_CONSUMER_SECRET ? '***configured***' : 'not set',
+      callbackUrl: process.env.TWITTER_CALLBACK_URL || 'not set',
+      message: twitterConfigured 
+        ? 'Twitter OAuth is properly configured' 
+        : 'Twitter OAuth is not configured. Please set TWITTER_CONSUMER_KEY and TWITTER_CONSUMER_SECRET in .env file'
+    },
     firebase: {
       configured: !!process.env.FIREBASE_PROJECT_ID
     },
-    setup_guide: '/docs/google-oauth-setup.md',
-    troubleshooting_guide: '/docs/google-oauth-troubleshooting.md'
+    setup_guide: '/docs/oauth-setup.md',
+    troubleshooting_guide: '/docs/oauth-troubleshooting.md'
   });
 });
 

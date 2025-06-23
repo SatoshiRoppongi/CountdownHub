@@ -530,6 +530,51 @@ export const googleCallback = (req: Request, res: Response, next: Function) => {
   })(req, res, next);
 };
 
+// Twitter OAuth 開始
+export const twitterAuth = passport.authenticate('twitter');
+
+// Twitter OAuth コールバック
+export const twitterCallback = (req: Request, res: Response, next: Function) => {
+  passport.authenticate('twitter', { session: false }, (err: any, user: any) => {
+    // フロントエンドURLを決定
+    const getFrontendUrl = () => {
+      return process.env.FRONTEND_URL || 
+             (process.env.NODE_ENV === 'production' ? 'https://countdownhub.jp' : 'http://localhost:3000');
+    };
+
+    if (err) {
+      console.error('Twitter OAuth callback error:', err);
+      return res.redirect(`${getFrontendUrl()}/login?error=oauth_error`);
+    }
+
+    if (!user) {
+      return res.redirect(`${getFrontendUrl()}/login?error=oauth_failed`);
+    }
+
+    try {
+      // JWTトークン生成
+      const token = jwt.sign(
+        { 
+          userId: user.id, 
+          email: user.email,
+          username: user.username 
+        },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '7d' }
+      );
+
+      // フロントエンドにリダイレクト（トークンをクエリパラメータで渡す）
+      const frontendUrl = getFrontendUrl();
+      console.log('Twitter OAuth callback - redirecting to:', `${frontendUrl}/auth/callback?token=${token}&provider=twitter`);
+      res.redirect(`${frontendUrl}/auth/callback?token=${token}&provider=twitter`);
+
+    } catch (error) {
+      console.error('Token generation error:', error);
+      res.redirect(`${getFrontendUrl()}/login?error=token_error`);
+    }
+  })(req, res, next);
+};
+
 // ソーシャルログイン用のアカウント連携
 export const linkSocialAccount = async (req: Request, res: Response) => {
   try {

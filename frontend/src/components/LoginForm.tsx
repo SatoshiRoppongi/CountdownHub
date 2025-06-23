@@ -117,15 +117,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
           onLogin={handleSocialLogin}
           disabled={isLoading || isSocialLoading}
         />
+        <SocialLoginButton
+          provider="twitter"
+          onLogin={handleSocialLogin}
+          disabled={isLoading || isSocialLoading}
+        />
         {/* 他のプロバイダーは今後追加 */}
         {/* 
         <SocialLoginButton
           provider="github"
-          onLogin={handleSocialLogin}
-          disabled={isLoading || isSocialLoading}
-        />
-        <SocialLoginButton
-          provider="twitter"
           onLogin={handleSocialLogin}
           disabled={isLoading || isSocialLoading}
         />
