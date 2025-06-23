@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { eventAPI, commentAPI, authAPI, userAPI } from '../services/api';
-import { Event, Comment } from '../types';
+import { Event } from '../types';
 import { Link } from 'react-router-dom';
 
 interface UserProfileUpdate {

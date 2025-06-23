@@ -53,7 +53,7 @@ const corsOptions = {
 };
 
 // CORS設定の詳細ログ
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
   const origin = req.headers.origin;
   if (process.env.NODE_ENV === 'production' && req.method === 'OPTIONS') {
     console.log(`🔍 CORS Preflight Request:`, {
