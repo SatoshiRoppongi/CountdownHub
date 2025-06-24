@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export type CountdownPhase = 'normal' | 'final-minute' | 'final-ten' | 'just-finished';
 
@@ -28,7 +28,7 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
     isRunning: false,
     elapsedSeconds: 0,
   });
-  const [wasRunning, setWasRunning] = useState(false);
+  const wasRunningRef = useRef(false);
 
   const getPhase = useCallback((totalSeconds: number): CountdownPhase => {
     if (totalSeconds <= 0) return 'just-finished';
@@ -48,8 +48,8 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
 
       // イベント開始前
       if (startDifference > 0) {
-        if (!wasRunning) {
-          setWasRunning(true);
+        if (!wasRunningRef.current) {
+          wasRunningRef.current = true;
         }
 
         const days = Math.floor(startDifference / (1000 * 60 * 60 * 24));
@@ -74,7 +74,7 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
 
       // イベント開始時
       setTimeLeft(prev => {
-        if (!prev.isExpired && wasRunning && startDifference <= 0) {
+        if (!prev.isExpired && wasRunningRef.current && startDifference <= 0) {
           const justFinished = true;
           
           if (justFinished && onFinish) {
@@ -158,7 +158,7 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [startDate, endDate, onFinish, getPhase, wasRunning]);
+  }, [startDate, endDate, onFinish, getPhase]);
 
   return timeLeft;
 };

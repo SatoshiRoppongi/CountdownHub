@@ -62,8 +62,8 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center space-x-1 sm:space-x-2 hover:opacity-80 transition-opacity"
               onClick={() => {
                 console.log('🔧 Header: logo link clicked');
-                // 強制的にbody overflowをリセット
-                document.body.style.overflow = '';
+                // 強制的にbodyのstyleを完全にクリア
+                document.body.style.cssText = '';
               }}
             >
               <span className="text-xl sm:text-2xl flex-shrink-0">⏰</span>
@@ -164,8 +164,8 @@ export const Header: React.FC<HeaderProps> = ({
                         onClick={() => {
                           console.log('🔧 Header: profile link clicked');
                           setIsUserMenuOpen(false);
-                          // 強制的にbody overflowをリセット
-                          document.body.style.overflow = '';
+                          // 強制的にbodyのstyleを完全にクリア
+                          document.body.style.cssText = '';
                         }}
                       >
                         プロフィール
@@ -177,8 +177,8 @@ export const Header: React.FC<HeaderProps> = ({
                           onClick={() => {
                             console.log('🔧 Header: admin link clicked');
                             setIsUserMenuOpen(false);
-                            // 強制的にbody overflowをリセット
-                            document.body.style.overflow = '';
+                            // 強制的にbodyのstyleを完全にクリア
+                            document.body.style.cssText = '';
                           }}
                         >
                           管理画面

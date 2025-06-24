@@ -34,9 +34,9 @@ function AppContent() {
     setShowAdvancedSearch(false);
     setShowSearchHistory(false);
     
-    // 確実にbody overflowをリセット
-    document.body.style.overflow = '';
-    console.log('🔧 App: body overflow reset to empty');
+    // 確実にbodyのstyleを完全にクリア
+    document.body.style.cssText = '';
+    console.log('🔧 App: body style completely cleared');
     
     // ホームページ以外に遷移した場合、検索関連のクエリをクリア
     if (location.pathname !== '/') {

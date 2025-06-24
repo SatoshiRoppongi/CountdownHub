@@ -61,7 +61,12 @@ export const SearchResultSummary: React.FC<SearchResultSummaryProps> = ({
     appliedFilters.venue_type ||
     (appliedFilters.dateRange && (appliedFilters.dateRange.start_date || appliedFilters.dateRange.end_date));
 
-  if (!hasFilters) return null;
+  if (!hasFilters) {
+    console.log('🔧 SearchResultSummary: no filters, returning null');
+    return null;
+  }
+  
+  console.log('🔧 SearchResultSummary: rendering with filters:', { searchTerm, appliedFilters });
 
   const getVenueTypeLabel = (type: string) => {
     switch (type) {

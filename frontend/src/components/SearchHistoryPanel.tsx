@@ -59,21 +59,21 @@ export const SearchHistoryPanel: React.FC<SearchHistoryPanelProps> = ({
       // モーダル表示時のスクロール防止
       document.body.style.overflow = 'hidden';
     } else {
-      // パネルが閉じられた時に確実にスクロールを復元
-      document.body.style.overflow = '';
+      // パネルが閉じられた時に確実にbodyのstyleをクリア
+      document.body.style.cssText = '';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      // クリーンアップ時も確実にスクロールを復元
-      document.body.style.overflow = '';
+      // クリーンアップ時も確実にbodyのstyleをクリア
+      document.body.style.cssText = '';
     };
   }, [isOpen, onClose]);
 
   // コンポーネントアンマウント時の確実なクリーンアップ
   useEffect(() => {
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.cssText = '';
     };
   }, []);
 
