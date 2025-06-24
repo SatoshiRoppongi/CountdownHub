@@ -2,6 +2,13 @@ import ReactGA from 'react-ga4';
 
 const MEASUREMENT_ID = process.env.REACT_APP_GA_MEASUREMENT_ID;
 
+// デバッグ用：環境変数の確認
+console.log('Environment check:', {
+  NODE_ENV: process.env.NODE_ENV,
+  MEASUREMENT_ID: MEASUREMENT_ID ? `${MEASUREMENT_ID.substring(0, 5)}...` : 'NOT_FOUND',
+  ALL_GA_VARS: Object.keys(process.env).filter(key => key.includes('GA'))
+});
+
 export const initGA = () => {
   if (MEASUREMENT_ID) {
     ReactGA.initialize(MEASUREMENT_ID);
