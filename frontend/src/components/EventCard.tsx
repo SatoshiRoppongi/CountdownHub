@@ -6,6 +6,7 @@ import { SearchHighlight } from './SearchHighlight';
 import { FavoriteButton } from './FavoriteButton';
 import { getUrgencyLevel } from '../hooks/useCountdown';
 import { useToast } from '../contexts/ToastContext';
+import { useAnalytics } from '../contexts/AnalyticsContext';
 
 interface EventCardProps {
   event: Event;
@@ -19,6 +20,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, searchTerm }) => {
   const totalSeconds = Math.floor((startTime.getTime() - now.getTime()) / 1000);
   const urgencyLevel = getUrgencyLevel(totalSeconds);
   const { showEventStarted } = useToast();
+  const { trackCustomEvent } = useAnalytics();
   
   // イベント開始通知の重複を防ぐためのref
   const hasNotifiedRef = useRef(false);
@@ -59,7 +61,13 @@ export const EventCard: React.FC<EventCardProps> = ({ event, searchTerm }) => {
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80" />
       
       {/* Clickable Link Area */}
-      <Link to={`/events/${event.id}`} className="absolute inset-0 cursor-pointer" />
+      <Link 
+        to={`/events/${event.id}`} 
+        className="absolute inset-0 cursor-pointer"
+        onClick={() => {
+          trackCustomEvent('event_card_click', 'Engagement', event.title, event.id);
+        }}
+      />
       
       
       {/* Countdown Timer - Top Overlay */}
