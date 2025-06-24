@@ -65,7 +65,7 @@ export const EventListPage: React.FC<EventListPageProps> = ({
       onAdvancedSearchClose?.();
       onSearchHistoryClose?.();
     }
-  }, [filters.search, onAdvancedSearchClose, onSearchHistoryClose]);
+  }, [filters.search]); // 依存配列からコールバック関数を除去
 
   const handleAdvancedSearch = (newFilters: EventFilters) => {
     setFilters(newFilters);

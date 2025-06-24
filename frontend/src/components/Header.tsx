@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdmin } from '../hooks/useAdmin';
@@ -46,10 +46,10 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = useCallback((value: string) => {
     setLocalSearchQuery(value);
-    // エンター押下時のみ検索実行するため、ここでは検索を実行しない
-  };
+    // エンターキー押下時のみ検索実行するため、リアルタイム検索は削除
+  }, []);
 
   return (
     <header className="bg-white shadow-md border-b">

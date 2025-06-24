@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { ToastMessage, ToastContainer } from '../components/Toast';
 
 interface ToastContextType {
@@ -69,14 +69,14 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     });
   }, [addToast]);
 
-  const contextValue: ToastContextType = {
+  const contextValue: ToastContextType = useMemo(() => ({
     addToast,
     removeToast,
     showEventStarted,
     showToast,
     showSuccess,
     showError,
-  };
+  }), [addToast, removeToast, showEventStarted, showToast, showSuccess, showError]);
 
   return (
     <ToastContext.Provider value={contextValue}>

@@ -74,6 +74,14 @@ function AppContent() {
     setShowSearchHistory(true);
   };
 
+  const handleAdvancedSearchClose = useCallback(() => {
+    setShowAdvancedSearch(false);
+  }, []);
+
+  const handleSearchHistoryClose = useCallback(() => {
+    setShowSearchHistory(false);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
@@ -91,8 +99,8 @@ function AppContent() {
                 searchQuery={location.pathname === '/' ? searchQuery : ''}
                 showAdvancedSearch={showAdvancedSearch}
                 showSearchHistory={showSearchHistory}
-                onAdvancedSearchClose={() => setShowAdvancedSearch(false)}
-                onSearchHistoryClose={() => setShowSearchHistory(false)}
+                onAdvancedSearchClose={handleAdvancedSearchClose}
+                onSearchHistoryClose={handleSearchHistoryClose}
               />
             } 
           />

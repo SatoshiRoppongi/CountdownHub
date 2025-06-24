@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEvent } from '../hooks/useEvents';
 import { CountdownTimer } from '../components/CountdownTimer';
@@ -17,10 +17,26 @@ export const EventDetailPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
+  // イベント開始通知の重複を防ぐためのref
+  const hasNotifiedRef = useRef(false);
+  
   const { data: event, isLoading, error } = useEvent(eventId);
 
   const handleEventFinish = () => {
+    // 既に通知済みの場合は何もしない
+    if (hasNotifiedRef.current) {
+      return;
+    }
+    
+    // 既に開始されているイベントの場合は通知しない
     if (event) {
+      const now = new Date();
+      const startTime = new Date(event.start_datetime);
+      if (now >= startTime) {
+        return;
+      }
+      
+      hasNotifiedRef.current = true;
       showEventStarted(event.title);
     }
   };
