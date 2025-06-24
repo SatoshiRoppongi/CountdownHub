@@ -48,7 +48,9 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
 
       // イベント開始前
       if (startDifference > 0) {
-        setWasRunning(true);
+        if (!wasRunning) {
+          setWasRunning(true);
+        }
 
         const days = Math.floor(startDifference / (1000 * 60 * 60 * 24));
         const hours = Math.floor((startDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));

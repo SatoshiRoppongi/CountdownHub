@@ -77,7 +77,12 @@ export const SearchHistoryPanel: React.FC<SearchHistoryPanelProps> = ({
     };
   }, []);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    console.log('🔧 SearchHistoryPanel: not open, returning null');
+    return null;
+  }
+  
+  console.log('🔧 SearchHistoryPanel: rendering modal');
 
   return (
     <div 

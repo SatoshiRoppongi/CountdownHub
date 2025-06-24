@@ -140,7 +140,12 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
     };
   }, []);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    console.log('🔧 AdvancedSearchPanel: not open, returning null');
+    return null;
+  }
+  
+  console.log('🔧 AdvancedSearchPanel: rendering modal');
 
   return (
     <div 

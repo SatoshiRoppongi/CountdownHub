@@ -30,12 +30,18 @@ function AppContent() {
 
   // パス変更時にパネルを閉じ、検索関連のクエリをクリア
   useEffect(() => {
+    console.log('🔧 App: path changed to:', location.pathname);
     setShowAdvancedSearch(false);
     setShowSearchHistory(false);
+    
+    // 確実にbody overflowをリセット
+    document.body.style.overflow = '';
+    console.log('🔧 App: body overflow reset to empty');
     
     // ホームページ以外に遷移した場合、検索関連のクエリをクリア
     if (location.pathname !== '/') {
       queryClient.removeQueries({ queryKey: ['events'] });
+      console.log('🔧 App: cleared events queries for non-home page');
     }
   }, [location.pathname, queryClient]);
 

@@ -57,7 +57,15 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* ロゴ・サイト名 */}
           <div className="flex items-center flex-shrink-0 min-w-0">
-            <Link to="/" className="flex items-center space-x-1 sm:space-x-2 hover:opacity-80 transition-opacity">
+            <Link 
+              to="/" 
+              className="flex items-center space-x-1 sm:space-x-2 hover:opacity-80 transition-opacity"
+              onClick={() => {
+                console.log('🔧 Header: logo link clicked');
+                // 強制的にbody overflowをリセット
+                document.body.style.overflow = '';
+              }}
+            >
               <span className="text-xl sm:text-2xl flex-shrink-0">⏰</span>
               <span className="text-sm sm:text-lg lg:text-xl font-bold text-gray-900 whitespace-nowrap truncate">カウントダウンハブ</span>
             </Link>
@@ -153,7 +161,12 @@ export const Header: React.FC<HeaderProps> = ({
                       <Link
                         to="/profile"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsUserMenuOpen(false)}
+                        onClick={() => {
+                          console.log('🔧 Header: profile link clicked');
+                          setIsUserMenuOpen(false);
+                          // 強制的にbody overflowをリセット
+                          document.body.style.overflow = '';
+                        }}
                       >
                         プロフィール
                       </Link>
@@ -161,7 +174,12 @@ export const Header: React.FC<HeaderProps> = ({
                         <Link
                           to="/admin"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setIsUserMenuOpen(false)}
+                          onClick={() => {
+                            console.log('🔧 Header: admin link clicked');
+                            setIsUserMenuOpen(false);
+                            // 強制的にbody overflowをリセット
+                            document.body.style.overflow = '';
+                          }}
                         >
                           管理画面
                         </Link>
