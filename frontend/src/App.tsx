@@ -4,6 +4,7 @@ import { QueryProvider } from './providers/QueryProvider';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { FirebaseAuthProvider } from './contexts/FirebaseAuthContext';
+import { AnalyticsProvider } from './contexts/AnalyticsContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { EventListPage } from './pages/EventListPage';
@@ -117,7 +118,9 @@ function App() {
         <FirebaseAuthProvider>
           <AuthProvider>
             <Router>
-              <AppContent />
+              <AnalyticsProvider>
+                <AppContent />
+              </AnalyticsProvider>
             </Router>
           </AuthProvider>
         </FirebaseAuthProvider>
