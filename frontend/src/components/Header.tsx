@@ -37,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
       });
       sessionStorage.removeItem('login_success');
     }
-  }, [user, showToast]);
+  }, [user]); // showToastを依存配列から削除
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
