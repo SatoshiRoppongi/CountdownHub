@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useDebouncedEvents } from '../hooks/useDebouncedEvents';
+import { useEvents } from '../hooks/useEvents';
 import { EventTimeTabsWithPagination } from '../components/EventTimeTabsWithPagination';
 import { AdvancedSearchPanel } from '../components/AdvancedSearchPanel';
 import { SearchHistoryPanel } from '../components/SearchHistoryPanel';
@@ -60,27 +60,12 @@ export const EventListPage: React.FC<EventListPageProps> = ({
   // 検索実行時にパネルを自動で閉じる
   useEffect(() => {
     if (filters.search !== undefined) {
-      console.log('🔍 Closing panels due to search:', filters.search);
       setShowAdvancedPanel(false);
       setShowHistoryPanel(false);
       onAdvancedSearchClose?.();
       onSearchHistoryClose?.();
     }
   }, [filters.search, onAdvancedSearchClose, onSearchHistoryClose]);
-
-  // ページ遷移時（location変更時）にパネルを確実に閉じる
-  useEffect(() => {
-    console.log('📍 Closing panels due to component mount');
-    setShowAdvancedPanel(false);
-    setShowHistoryPanel(false);
-    onAdvancedSearchClose?.();
-    onSearchHistoryClose?.();
-  }, [onAdvancedSearchClose, onSearchHistoryClose]);
-
-  // パネル状態をログ出力
-  useEffect(() => {
-    console.log('🎛️ Panel states:', { showAdvancedPanel, showHistoryPanel });
-  }, [showAdvancedPanel, showHistoryPanel]);
 
   const handleAdvancedSearch = (newFilters: EventFilters) => {
     setFilters(newFilters);
@@ -104,13 +89,10 @@ export const EventListPage: React.FC<EventListPageProps> = ({
     data, 
     isLoading, 
     error
-  } = useDebouncedEvents({ 
-    filters: {
-      ...filters, 
-      page: currentPage, 
-      limit: itemsPerPage 
-    },
-    debounceMs: 500
+  } = useEvents({ 
+    ...filters, 
+    page: currentPage, 
+    limit: itemsPerPage 
   });
 
   const events = data?.events || [];

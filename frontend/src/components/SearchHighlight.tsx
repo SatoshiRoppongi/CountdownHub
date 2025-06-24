@@ -98,6 +98,7 @@ export const SearchResultSummary: React.FC<SearchResultSummaryProps> = ({
                   キーワード: "{searchTerm}"
                 </span>
                 <button
+                  type="button"
                   onClick={() => onClearFilter('search')}
                   className="ml-2 text-blue-600 hover:text-blue-800"
                 >
@@ -113,6 +114,7 @@ export const SearchResultSummary: React.FC<SearchResultSummaryProps> = ({
                   🏷️ {tag}
                 </span>
                 <button
+                  type="button"
                   onClick={() => onClearFilter('tag', tag)}
                   className="ml-2 text-blue-600 hover:text-blue-800"
                 >
@@ -128,6 +130,7 @@ export const SearchResultSummary: React.FC<SearchResultSummaryProps> = ({
                   {getVenueTypeLabel(appliedFilters.venue_type)}
                 </span>
                 <button
+                  type="button"
                   onClick={() => onClearFilter('venue_type')}
                   className="ml-2 text-blue-600 hover:text-blue-800"
                 >
@@ -145,6 +148,7 @@ export const SearchResultSummary: React.FC<SearchResultSummaryProps> = ({
                   {appliedFilters.dateRange.end_date ? formatDate(appliedFilters.dateRange.end_date) : '終了日未設定'}
                 </span>
                 <button
+                  type="button"
                   onClick={() => onClearFilter('dateRange')}
                   className="ml-2 text-blue-600 hover:text-blue-800"
                 >
@@ -157,6 +161,7 @@ export const SearchResultSummary: React.FC<SearchResultSummaryProps> = ({
 
         {/* 全クリアボタン */}
         <button
+          type="button"
           onClick={onClearAll}
           className="text-sm text-blue-600 hover:text-blue-800 underline whitespace-nowrap"
         >

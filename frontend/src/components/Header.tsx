@@ -48,9 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleSearchChange = (value: string) => {
     setLocalSearchQuery(value);
-    if (onSearchChange) {
-      onSearchChange(value);
-    }
+    // エンター押下時のみ検索実行するため、ここでは検索を実行しない
   };
 
   return (
