@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { QueryProvider } from './providers/QueryProvider';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -22,24 +23,30 @@ import { PrivateRoute } from './components/PrivateRoute';
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showSearchHistory, setShowSearchHistory] = useState(false);
 
-  // パス変更時にパネルを閉じる
+  // パス変更時にパネルを閉じ、検索関連のクエリをクリア
   useEffect(() => {
     setShowAdvancedSearch(false);
     setShowSearchHistory(false);
-  }, [location.pathname]);
+    
+    // ホームページ以外に遷移した場合、検索関連のクエリをクリア
+    if (location.pathname !== '/') {
+      queryClient.removeQueries({ queryKey: ['events'] });
+    }
+  }, [location.pathname, queryClient]);
 
   // URLパラメータから検索クエリを読み取る
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const searchParam = searchParams.get('search');
-    if (searchParam && location.pathname === '/') {
-      setSearchQuery(searchParam);
-    } else if (location.pathname !== '/') {
-      // 他のページに移動した場合は検索クエリをクリア
+    if (location.pathname === '/') {
+      const searchParams = new URLSearchParams(location.search);
+      const searchParam = searchParams.get('search');
+      setSearchQuery(searchParam || '');
+    } else {
+      // 他のページに移動した場合は検索クエリを即座にクリア
       setSearchQuery('');
     }
   }, [location.pathname, location.search]);
@@ -75,7 +82,7 @@ function AppContent() {
             path="/" 
             element={
               <EventListPage 
-                searchQuery={searchQuery}
+                searchQuery={location.pathname === '/' ? searchQuery : ''}
                 showAdvancedSearch={showAdvancedSearch}
                 showSearchHistory={showSearchHistory}
                 onAdvancedSearchClose={() => setShowAdvancedSearch(false)}
