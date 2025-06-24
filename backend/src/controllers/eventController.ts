@@ -25,11 +25,13 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
       is_active: true
     };
 
+    // 検索条件の準備
+    const searchConditions = [];
     if (search) {
-      where.OR = [
+      searchConditions.push(
         { title: { contains: search as string, mode: 'insensitive' } },
         { description: { contains: search as string, mode: 'insensitive' } }
-      ];
+      );
     }
 
     if (tags) {
@@ -52,12 +54,9 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
           // 当日未開催 (今日の00:00 <= 開始時刻 < 明日の00:00 and 開始時刻 > 現在時刻)
           where.start_datetime = {
             gte: startOfToday,
-            lt: startOfTomorrow
+            lt: startOfTomorrow,
+            gt: now
           };
-          where.OR = [
-            { end_datetime: null, start_datetime: { gt: now } },
-            { end_datetime: { not: null }, start_datetime: { gt: now } }
-          ];
           break;
         case 'upcoming':
           // 明日以降 (開始時刻 >= 明日の00:00)
@@ -68,9 +67,13 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
         case 'ongoing':
           // 開催中 (開始時刻 <= 現在時刻 < 終了時刻)
           where.start_datetime = { lte: now };
-          where.OR = [
-            { end_datetime: null },
-            { end_datetime: { gt: now } }
+          where.AND = [
+            {
+              OR: [
+                { end_datetime: null },
+                { end_datetime: { gt: now } }
+              ]
+            }
           ];
           break;
         case 'ended':
@@ -80,6 +83,25 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
             { end_datetime: null, start_datetime: { lt: now } }
           ];
           break;
+      }
+    }
+
+    // 検索条件とタイムカテゴリ条件を組み合わせる
+    if (searchConditions.length > 0) {
+      if (where.OR) {
+        // タイムカテゴリでORがある場合（ended）、ANDで組み合わせる
+        where.AND = [
+          ...(where.AND || []),
+          { OR: searchConditions },
+          { OR: where.OR }
+        ];
+        delete where.OR;
+      } else if (where.AND) {
+        // タイムカテゴリでANDがある場合（ongoing）、さらにANDを追加
+        where.AND.push({ OR: searchConditions });
+      } else {
+        // その他の場合は単純にORを設定
+        where.OR = searchConditions;
       }
     }
 

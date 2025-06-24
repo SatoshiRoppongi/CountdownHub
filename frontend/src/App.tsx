@@ -1,6 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { QueryProvider } from './providers/QueryProvider';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -23,46 +22,46 @@ import { PrivateRoute } from './components/PrivateRoute';
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
-  const [showSearchHistory, setShowSearchHistory] = useState(false);
 
-  // パス変更時にパネルを閉じ、検索関連のクエリをクリア
+  // パス変更時にパネルを閉じる（検索クエリクリアは削除）
   useEffect(() => {
     console.log('🔧 App: path changed to:', location.pathname);
     setShowAdvancedSearch(false);
-    setShowSearchHistory(false);
     
     // 確実にbodyのstyleを完全にクリア
     document.body.style.cssText = '';
     console.log('🔧 App: body style completely cleared');
-    
-    // ホームページ以外に遷移した場合、検索関連のクエリをクリア
-    if (location.pathname !== '/') {
-      queryClient.removeQueries({ queryKey: ['events'] });
-      console.log('🔧 App: cleared events queries for non-home page');
-    }
-  }, [location.pathname, queryClient]);
+  }, [location.pathname]);
 
-  // URLパラメータから検索クエリを読み取る
+  // URLパラメータから検索クエリを読み取る（ホームページのみ）
   useEffect(() => {
     if (location.pathname === '/') {
       const searchParams = new URLSearchParams(location.search);
       const searchParam = searchParams.get('search');
+      console.log('🔧 App: setting search query from URL:', searchParam);
       setSearchQuery(searchParam || '');
-    } else {
-      // 他のページに移動した場合は検索クエリを即座にクリア
-      setSearchQuery('');
     }
   }, [location.pathname, location.search]);
 
   const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query);
+    console.log('🔧 App: handleSearchChange called with:', query);
     
-    // 詳細ページまたは他のページから検索した場合は一覧ページに遷移
+    // 他のページから検索した場合のみホームに遷移
     if (location.pathname !== '/' && query.trim()) {
+      console.log('🔧 App: navigating to home with search query');
       navigate(`/?search=${encodeURIComponent(query.trim())}`);
+      return;
+    }
+    
+    // ホームページでの検索はURLを更新
+    if (location.pathname === '/') {
+      if (query.trim()) {
+        navigate(`/?search=${encodeURIComponent(query.trim())}`, { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
     }
   }, [location.pathname, navigate]);
 
@@ -70,16 +69,8 @@ function AppContent() {
     setShowAdvancedSearch(true);
   };
 
-  const handleSearchHistory = () => {
-    setShowSearchHistory(true);
-  };
-
   const handleAdvancedSearchClose = useCallback(() => {
     setShowAdvancedSearch(false);
-  }, []);
-
-  const handleSearchHistoryClose = useCallback(() => {
-    setShowSearchHistory(false);
   }, []);
 
   return (
@@ -88,7 +79,6 @@ function AppContent() {
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
         onAdvancedSearch={handleAdvancedSearch}
-        onSearchHistory={handleSearchHistory}
       />
       <main>
         <Routes>
@@ -96,11 +86,9 @@ function AppContent() {
             path="/" 
             element={
               <EventListPage 
-                searchQuery={location.pathname === '/' ? searchQuery : ''}
+                searchQuery={searchQuery}
                 showAdvancedSearch={showAdvancedSearch}
-                showSearchHistory={showSearchHistory}
                 onAdvancedSearchClose={handleAdvancedSearchClose}
-                onSearchHistoryClose={handleSearchHistoryClose}
               />
             } 
           />

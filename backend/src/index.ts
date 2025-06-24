@@ -28,8 +28,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分
-  max: process.env.NODE_ENV === 'development' ? 1000 : 100, // 開発環境では1000リクエスト、本番では100
+  windowMs: 10 * 60 * 1000, // 10分に短縮（より柔軟な制限）
+  max: process.env.NODE_ENV === 'development' ? 2000 : 1200, // 開発環境では2000リクエスト、本番では10分間1200リクエスト
   message: 'Too many requests from this IP, please try again later.',
 });
 

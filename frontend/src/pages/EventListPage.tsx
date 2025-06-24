@@ -1,26 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useEvents } from '../hooks/useEvents';
 import { EventTimeTabsWithPagination } from '../components/EventTimeTabsWithPagination';
 import { AdvancedSearchPanel } from '../components/AdvancedSearchPanel';
-import { SearchHistoryPanel } from '../components/SearchHistoryPanel';
 import { SearchResultSummary } from '../components/SearchHighlight';
-import { useSearchHistory } from '../hooks/useSearchHistory';
 import { EventFilters, SortOption } from '../types';
 
 interface EventListPageProps {
   searchQuery?: string;
   showAdvancedSearch?: boolean;
-  showSearchHistory?: boolean;
   onAdvancedSearchClose?: () => void;
-  onSearchHistoryClose?: () => void;
 }
 
 export const EventListPage: React.FC<EventListPageProps> = ({ 
   searchQuery,
   showAdvancedSearch,
-  showSearchHistory,
-  onAdvancedSearchClose,
-  onSearchHistoryClose
+  onAdvancedSearchClose
 }) => {
   const [filters, setFilters] = useState<EventFilters>({
     sort_by: 'start_datetime',
@@ -30,8 +24,6 @@ export const EventListPage: React.FC<EventListPageProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTimeCategory, setActiveTimeCategory] = useState<'today' | 'upcoming' | 'ongoing' | 'ended'>('today');
   const [showAdvancedPanel, setShowAdvancedPanel] = useState(false);
-  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
-  const { addToHistory } = useSearchHistory();
   
   const itemsPerPage = 30;
   
@@ -51,28 +43,15 @@ export const EventListPage: React.FC<EventListPageProps> = ({
     }
   }, [showAdvancedSearch]);
 
-  useEffect(() => {
-    if (showSearchHistory) {
-      setShowHistoryPanel(true);
-    }
-  }, [showSearchHistory]);
-
   // 検索実行時にパネルを自動で閉じる
   useEffect(() => {
     if (filters.search !== undefined) {
       setShowAdvancedPanel(false);
-      setShowHistoryPanel(false);
       onAdvancedSearchClose?.();
-      onSearchHistoryClose?.();
     }
-  }, [filters.search]); // 依存配列からコールバック関数を除去
+  }, [filters.search, onAdvancedSearchClose]);
 
   const handleAdvancedSearch = (newFilters: EventFilters) => {
-    setFilters(newFilters);
-    setCurrentPage(1); // フィルター変更時はページをリセット
-  };
-
-  const handleHistorySearch = (newFilters: EventFilters) => {
     setFilters(newFilters);
     setCurrentPage(1); // フィルター変更時はページをリセット
   };
@@ -99,12 +78,6 @@ export const EventListPage: React.FC<EventListPageProps> = ({
   const totalEvents = data?.pagination?.total || 0;
   const totalPages = data?.pagination?.totalPages || 0;
 
-  // 検索結果が取得されたら履歴に追加
-  useEffect(() => {
-    if (totalEvents > 0 && (filters.search || filters.tags?.length || filters.venue_type || filters.dateRange)) {
-      addToHistory(filters, totalEvents);
-    }
-  }, [totalEvents, filters, addToHistory]);
 
   const handleClearFilter = (filterType: string, value?: string) => {
     setFilters(prev => {
@@ -158,6 +131,19 @@ export const EventListPage: React.FC<EventListPageProps> = ({
     setCurrentPage(1); // タブ変更時はページをリセット
   };
 
+  // appliedFiltersオブジェクトをメモ化（無限レンダリング防止）
+  const appliedFilters = useMemo(() => ({
+    tags: filters.tags,
+    venue_type: filters.venue_type,
+    dateRange: filters.dateRange
+  }), [filters.tags, filters.venue_type, filters.dateRange]);
+
+  // コールバック関数をメモ化（無限レンダリング防止）
+  const handleAdvancedSearchClose = useCallback(() => {
+    setShowAdvancedPanel(false);
+    onAdvancedSearchClose?.();
+  }, [onAdvancedSearchClose]);
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-6">
@@ -198,11 +184,7 @@ export const EventListPage: React.FC<EventListPageProps> = ({
       <SearchResultSummary
         totalResults={totalEvents}
         searchTerm={filters.search}
-        appliedFilters={{
-          tags: filters.tags,
-          venue_type: filters.venue_type,
-          dateRange: filters.dateRange
-        }}
+        appliedFilters={appliedFilters}
         onClearFilter={handleClearFilter}
         onClearAll={handleClearAllFilters}
       />
@@ -225,23 +207,11 @@ export const EventListPage: React.FC<EventListPageProps> = ({
       {/* 高度検索パネル */}
       <AdvancedSearchPanel
         isOpen={showAdvancedPanel}
-        onClose={() => {
-          setShowAdvancedPanel(false);
-          onAdvancedSearchClose?.();
-        }}
+        onClose={handleAdvancedSearchClose}
         onSearch={handleAdvancedSearch}
         initialFilters={filters}
       />
 
-      {/* 検索履歴パネル */}
-      <SearchHistoryPanel
-        isOpen={showHistoryPanel}
-        onClose={() => {
-          setShowHistoryPanel(false);
-          onSearchHistoryClose?.();
-        }}
-        onSelectSearch={handleHistorySearch}
-      />
     </div>
   );
 };

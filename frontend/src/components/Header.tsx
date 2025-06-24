@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdmin } from '../hooks/useAdmin';
 import { useToast } from '../contexts/ToastContext';
@@ -9,20 +9,27 @@ interface HeaderProps {
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   onAdvancedSearch?: () => void;
-  onSearchHistory?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
   searchQuery = '', 
   onSearchChange,
-  onAdvancedSearch,
-  onSearchHistory
+  onAdvancedSearch
 }) => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { isAdmin } = useAdmin();
   const { showToast } = useToast();
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+
+  // propsのsearchQueryが変更された時にlocalSearchQueryを同期（ホームページのみ）
+  useEffect(() => {
+    // 他のページでは同期しない（ナビゲーションブロック防止）
+    if (location.pathname === '/') {
+      setLocalSearchQuery(searchQuery);
+    }
+  }, [searchQuery, location.pathname]);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
@@ -37,7 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
       });
       sessionStorage.removeItem('login_success');
     }
-  }, [user]); // showToastを依存配列から削除
+  }, [user, showToast]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,14 +107,6 @@ export const Header: React.FC<HeaderProps> = ({
                   title="高度な検索"
                 >
                   🔍
-                </button>
-                <button
-                  type="button"
-                  onClick={onSearchHistory}
-                  className="inline-flex items-center px-3 py-2 text-sm text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
-                  title="検索履歴"
-                >
-                  📚
                 </button>
               </div>
             </div>
@@ -267,22 +266,6 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="flex items-center space-x-3">
                 <span className="text-2xl">🔍</span>
                 <span className="font-medium text-gray-900">高度な検索</span>
-              </div>
-              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-            
-            <button
-              onClick={() => {
-                if (onSearchHistory) onSearchHistory();
-                setIsMobileSearchOpen(false);
-              }}
-              className="w-full flex items-center justify-between p-3 text-left bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">📚</span>
-                <span className="font-medium text-gray-900">検索履歴</span>
               </div>
               <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
