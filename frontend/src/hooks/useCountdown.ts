@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 export type CountdownPhase = 'normal' | 'final-minute' | 'final-ten' | 'just-finished';
 
@@ -33,7 +33,7 @@ const calculateTime = (ms: number) => {
 
 export const useCountdown = (startDate: string | Date, endDate?: string | Date, onFinish?: () => void): CountdownTime => {
   // 初期状態の判定（マウント時の状態を正確に把握）
-  const getInitialState = (): CountdownTime => {
+  const getInitialState = useCallback((): CountdownTime => {
     const now = new Date().getTime();
     const startTime = new Date(startDate).getTime();
     const endTime = endDate ? new Date(endDate).getTime() : null;
@@ -95,7 +95,7 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
       isRunning: false,
       elapsedSeconds: Math.floor(elapsed / 1000),
     };
-  };
+  }, [startDate, endDate]);
 
   const [timeLeft, setTimeLeft] = useState<CountdownTime>(() => getInitialState());
   
