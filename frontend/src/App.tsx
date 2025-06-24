@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useState, useCallback, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { QueryProvider } from './providers/QueryProvider';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -21,27 +21,57 @@ import { PrivateRoute } from './components/PrivateRoute';
 
 function AppContent() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
-  const [showSearchHistory, setShowSearchHistory] = useState(false);
 
-  // パス変更時にパネルを閉じる
+  // パス変更時にパネルを閉じる（検索クエリクリアは削除）
   useEffect(() => {
+    console.log('🔧 App: path changed to:', location.pathname);
     setShowAdvancedSearch(false);
-    setShowSearchHistory(false);
+    
+    // 確実にbodyのstyleを完全にクリア
+    document.body.style.cssText = '';
+    console.log('🔧 App: body style completely cleared');
   }, [location.pathname]);
 
+  // URLパラメータから検索クエリを読み取る（ホームページのみ）
+  useEffect(() => {
+    if (location.pathname === '/') {
+      const searchParams = new URLSearchParams(location.search);
+      const searchParam = searchParams.get('search');
+      console.log('🔧 App: setting search query from URL:', searchParam);
+      setSearchQuery(searchParam || '');
+    }
+  }, [location.pathname, location.search]);
+
   const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query);
-  }, []);
+    console.log('🔧 App: handleSearchChange called with:', query);
+    
+    // 他のページから検索した場合のみホームに遷移
+    if (location.pathname !== '/' && query.trim()) {
+      console.log('🔧 App: navigating to home with search query');
+      navigate(`/?search=${encodeURIComponent(query.trim())}`);
+      return;
+    }
+    
+    // ホームページでの検索はURLを更新
+    if (location.pathname === '/') {
+      if (query.trim()) {
+        navigate(`/?search=${encodeURIComponent(query.trim())}`, { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    }
+  }, [location.pathname, navigate]);
 
   const handleAdvancedSearch = () => {
     setShowAdvancedSearch(true);
   };
 
-  const handleSearchHistory = () => {
-    setShowSearchHistory(true);
-  };
+  const handleAdvancedSearchClose = useCallback(() => {
+    setShowAdvancedSearch(false);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -49,7 +79,6 @@ function AppContent() {
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
         onAdvancedSearch={handleAdvancedSearch}
-        onSearchHistory={handleSearchHistory}
       />
       <main>
         <Routes>
@@ -59,9 +88,7 @@ function AppContent() {
               <EventListPage 
                 searchQuery={searchQuery}
                 showAdvancedSearch={showAdvancedSearch}
-                showSearchHistory={showSearchHistory}
-                onAdvancedSearchClose={() => setShowAdvancedSearch(false)}
-                onSearchHistoryClose={() => setShowSearchHistory(false)}
+                onAdvancedSearchClose={handleAdvancedSearchClose}
               />
             } 
           />

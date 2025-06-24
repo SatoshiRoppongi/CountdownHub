@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 
 export interface ToastMessage {
   id: string;
@@ -16,6 +16,14 @@ interface ToastProps {
 export const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const toastIdRef = useRef(toast.id);
+  const onCloseRef = useRef(onClose);
+
+  // refs を最新の値で更新
+  useEffect(() => {
+    toastIdRef.current = toast.id;
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     // 入場アニメーション
@@ -26,9 +34,9 @@ export const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
   const handleClose = useCallback(() => {
     setIsLeaving(true);
     setTimeout(() => {
-      onClose(toast.id);
+      onCloseRef.current(toastIdRef.current);
     }, 300);
-  }, [onClose, toast.id]);
+  }, []);
 
   useEffect(() => {
     if (toast.duration !== -1) {

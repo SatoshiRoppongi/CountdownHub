@@ -6,8 +6,11 @@ export const useEvents = (filters: EventFilters & { page?: number; limit?: numbe
   return useQuery<EventsResponse>({
     queryKey: ['events', filters],
     queryFn: () => eventAPI.getEvents(filters),
-    staleTime: 2000, // 2秒間はキャッシュデータを使用
+    staleTime: 60000, // 60秒間はキャッシュデータを使用（倍に拡張）
+    gcTime: 300000, // 5分間キャッシュを保持
     refetchOnWindowFocus: false, // ウィンドウフォーカス時の自動リフェッチを無効
+    refetchOnMount: false, // マウント時の自動リフェッチを無効
+    refetchOnReconnect: false, // 再接続時の自動リフェッチを無効
     select: (data) => ({
       ...data,
       events: data.events.map(event => ({
@@ -24,6 +27,11 @@ export const useEvent = (id: number) => {
     queryKey: ['event', id],
     queryFn: () => eventAPI.getEventById(id),
     enabled: !!id,
+    staleTime: 300000, // 5分間はキャッシュデータを使用
+    gcTime: 600000, // 10分間キャッシュを保持
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     select: (data) => ({
       ...data,
       start_datetime: new Date(data.start_datetime).toISOString(),

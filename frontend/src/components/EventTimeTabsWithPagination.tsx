@@ -76,7 +76,7 @@ export const EventTimeTabsWithPagination: React.FC<EventTimeTabsWithPaginationPr
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-6">
       {/* タブナビゲーション */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="flex border-b border-gray-200">

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { EventFilters } from '../types';
-import { useSearchHistory } from '../hooks/useSearchHistory';
 
 interface AdvancedSearchPanelProps {
   isOpen: boolean;
@@ -15,7 +14,6 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
   onSearch,
   initialFilters = {}
 }) => {
-  const { saveSearch, getPopularTags } = useSearchHistory();
   const [filters, setFilters] = useState<EventFilters>({
     search: '',
     tags: [],
@@ -31,8 +29,6 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
     start_date: '',
     end_date: ''
   });
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [saveName, setSaveName] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -86,28 +82,6 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
     setDateRange({ start_date: '', end_date: '' });
   };
 
-  const handleSave = () => {
-    if (!saveName.trim()) return;
-    
-    const searchFilters: EventFilters = {
-      ...tempFilters,
-      tags: tempFilters.tags?.length ? tempFilters.tags : undefined
-    };
-
-    if (dateRange.start_date || dateRange.end_date) {
-      searchFilters.dateRange = dateRange;
-    }
-
-    const success = saveSearch(searchFilters, saveName.trim());
-    if (success) {
-      setShowSaveDialog(false);
-      setSaveName('');
-      // 成功メッセージを表示（簡易版）
-      alert('検索条件を保存しました！');
-    }
-  };
-
-  const popularTags = getPopularTags();
 
   // Escapeキーでパネルを閉じる
   useEffect(() => {
@@ -122,18 +96,27 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
       // モーダル表示時のスクロール防止
       document.body.style.overflow = 'hidden';
     } else {
-      // パネルが閉じられた時に確実にスクロールを復元
-      document.body.style.overflow = 'unset';
+      // パネルが閉じられた時に確実にbodyのstyleをクリア
+      document.body.style.cssText = '';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      // クリーンアップ時も確実にスクロールを復元
-      document.body.style.overflow = 'unset';
+      // クリーンアップ時も確実にbodyのstyleをクリア
+      document.body.style.cssText = '';
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  // コンポーネントアンマウント時の確実なクリーンアップ
+  useEffect(() => {
+    return () => {
+      document.body.style.cssText = '';
+    };
+  }, []);
+
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div 
@@ -216,10 +199,10 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
             {/* 人気タグクイック選択 */}
             <div>
               <p className="text-xs text-gray-600 mb-2">
-                {popularTags.length > 0 ? '人気タグから選択:' : 'おすすめタグから選択:'}
+                おすすめタグから選択:
               </p>
               <div className="flex flex-wrap gap-2">
-                {(popularTags.length > 0 ? popularTags : ['React', 'JavaScript', 'TypeScript', 'Node.js', 'Vue', 'Angular', 'Python', 'AI', 'Web3']).map(tag => (
+                {['React', 'JavaScript', 'TypeScript', 'Node.js', 'Vue', 'Angular', 'Python', 'AI', 'Web3'].map((tag: string) => (
                   <button
                     key={tag}
                     onClick={() => {
@@ -230,14 +213,9 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
                         }));
                       }
                     }}
-                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                      popularTags.includes(tag)
-                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                    className="px-3 py-1 text-xs rounded-full transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
                   >
                     {tag}
-                    {popularTags.includes(tag) && <span className="ml-1">🔥</span>}
                   </button>
                 ))}
               </div>
@@ -342,12 +320,6 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
           </button>
           <div className="flex space-x-3">
             <button
-              onClick={() => setShowSaveDialog(true)}
-              className="px-6 py-2 text-yellow-700 bg-yellow-100 rounded-md hover:bg-yellow-200 transition-colors"
-            >
-              ⭐ 保存
-            </button>
-            <button
               onClick={onClose}
               className="px-6 py-2 text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
             >
@@ -362,37 +334,6 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
           </div>
         </div>
 
-        {/* 保存ダイアログ */}
-        {showSaveDialog && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-6 m-4 w-full max-w-md">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">検索条件を保存</h3>
-              <input
-                type="text"
-                value={saveName}
-                onChange={(e) => setSaveName(e.target.value)}
-                placeholder="保存名を入力..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
-                onKeyPress={(e) => e.key === 'Enter' && handleSave()}
-              />
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowSaveDialog(false)}
-                  className="px-4 py-2 text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
-                >
-                  キャンセル
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={!saveName.trim()}
-                  className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  保存
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

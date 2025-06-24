@@ -61,7 +61,9 @@ export const SearchResultSummary: React.FC<SearchResultSummaryProps> = ({
     appliedFilters.venue_type ||
     (appliedFilters.dateRange && (appliedFilters.dateRange.start_date || appliedFilters.dateRange.end_date));
 
-  if (!hasFilters) return null;
+  if (!hasFilters) {
+    return null;
+  }
 
   const getVenueTypeLabel = (type: string) => {
     switch (type) {
@@ -81,25 +83,20 @@ export const SearchResultSummary: React.FC<SearchResultSummaryProps> = ({
   };
 
   return (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+    <div className="mb-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex-1">
-          <div className="flex items-center space-x-2 mb-2">
-            <span className="text-sm font-medium text-blue-900">
-              🔍 検索結果: {totalResults}件
-            </span>
-          </div>
-          
           <div className="flex flex-wrap gap-2">
             {/* キーワード検索 */}
             {searchTerm && (
-              <div className="inline-flex items-center bg-white border border-blue-300 rounded-full px-3 py-1">
-                <span className="text-sm text-blue-800">
+              <div className="inline-flex items-center bg-gray-100 border border-gray-300 rounded-full px-3 py-1">
+                <span className="text-sm text-gray-700">
                   キーワード: "{searchTerm}"
                 </span>
                 <button
+                  type="button"
                   onClick={() => onClearFilter('search')}
-                  className="ml-2 text-blue-600 hover:text-blue-800"
+                  className="ml-2 text-gray-600 hover:text-gray-800"
                 >
                   ×
                 </button>
@@ -108,13 +105,14 @@ export const SearchResultSummary: React.FC<SearchResultSummaryProps> = ({
 
             {/* タグフィルター */}
             {appliedFilters.tags?.map(tag => (
-              <div key={tag} className="inline-flex items-center bg-white border border-blue-300 rounded-full px-3 py-1">
-                <span className="text-sm text-blue-800">
+              <div key={tag} className="inline-flex items-center bg-gray-100 border border-gray-300 rounded-full px-3 py-1">
+                <span className="text-sm text-gray-700">
                   🏷️ {tag}
                 </span>
                 <button
+                  type="button"
                   onClick={() => onClearFilter('tag', tag)}
-                  className="ml-2 text-blue-600 hover:text-blue-800"
+                  className="ml-2 text-gray-600 hover:text-gray-800"
                 >
                   ×
                 </button>
@@ -123,13 +121,14 @@ export const SearchResultSummary: React.FC<SearchResultSummaryProps> = ({
 
             {/* 開催形式フィルター */}
             {appliedFilters.venue_type && (
-              <div className="inline-flex items-center bg-white border border-blue-300 rounded-full px-3 py-1">
-                <span className="text-sm text-blue-800">
+              <div className="inline-flex items-center bg-gray-100 border border-gray-300 rounded-full px-3 py-1">
+                <span className="text-sm text-gray-700">
                   {getVenueTypeLabel(appliedFilters.venue_type)}
                 </span>
                 <button
+                  type="button"
                   onClick={() => onClearFilter('venue_type')}
-                  className="ml-2 text-blue-600 hover:text-blue-800"
+                  className="ml-2 text-gray-600 hover:text-gray-800"
                 >
                   ×
                 </button>
@@ -138,15 +137,16 @@ export const SearchResultSummary: React.FC<SearchResultSummaryProps> = ({
 
             {/* 日付範囲フィルター */}
             {appliedFilters.dateRange && (appliedFilters.dateRange.start_date || appliedFilters.dateRange.end_date) && (
-              <div className="inline-flex items-center bg-white border border-blue-300 rounded-full px-3 py-1">
-                <span className="text-sm text-blue-800">
+              <div className="inline-flex items-center bg-gray-100 border border-gray-300 rounded-full px-3 py-1">
+                <span className="text-sm text-gray-700">
                   📅 {appliedFilters.dateRange.start_date ? formatDate(appliedFilters.dateRange.start_date) : '開始日未設定'}
                   {' ～ '}
                   {appliedFilters.dateRange.end_date ? formatDate(appliedFilters.dateRange.end_date) : '終了日未設定'}
                 </span>
                 <button
+                  type="button"
                   onClick={() => onClearFilter('dateRange')}
-                  className="ml-2 text-blue-600 hover:text-blue-800"
+                  className="ml-2 text-gray-600 hover:text-gray-800"
                 >
                   ×
                 </button>
@@ -157,8 +157,9 @@ export const SearchResultSummary: React.FC<SearchResultSummaryProps> = ({
 
         {/* 全クリアボタン */}
         <button
+          type="button"
           onClick={onClearAll}
-          className="text-sm text-blue-600 hover:text-blue-800 underline whitespace-nowrap"
+          className="text-sm text-gray-600 hover:text-gray-800 underline whitespace-nowrap"
         >
           すべてクリア
         </button>
