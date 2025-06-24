@@ -19,7 +19,9 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
   onFinish
 }) => {
   const { days, hours, minutes, seconds, isExpired, totalSeconds, phase, justFinished, isRunning } = useCountdown(targetDate, endDate, onFinish);
+  
   const [showCelebration, setShowCelebration] = useState(false);
+
 
   // 経過時間をフォーマットする関数
   const formatElapsedTime = (days: number, hours: number, minutes: number, seconds: number) => {
@@ -32,12 +34,14 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
     }
   };
 
-  // 0秒になった時のお祝いアニメーション
+  // justFinishedが true の時のみアニメーション表示
   useEffect(() => {
     if (justFinished) {
       setShowCelebration(true);
       const timer = setTimeout(() => setShowCelebration(false), 3000);
       return () => clearTimeout(timer);
+    } else {
+      setShowCelebration(false);
     }
   }, [justFinished]);
   

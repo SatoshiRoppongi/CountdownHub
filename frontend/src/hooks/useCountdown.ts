@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export type CountdownPhase = 'normal' | 'final-minute' | 'final-ten' | 'just-finished';
 
@@ -11,60 +11,183 @@ interface CountdownTime {
   totalSeconds: number;
   phase: CountdownPhase;
   justFinished: boolean;
-  isRunning: boolean; // 開催中かどうか
-  elapsedSeconds: number; // 経過時間（秒）
+  isRunning: boolean;
+  elapsedSeconds: number;
 }
 
+// 純粋関数として外部定義（依存配列に含まれない）
+const getPhase = (totalSeconds: number): CountdownPhase => {
+  if (totalSeconds <= 0) return 'just-finished';
+  if (totalSeconds <= 10) return 'final-ten';
+  if (totalSeconds <= 60) return 'final-minute';
+  return 'normal';
+};
+
+const calculateTime = (ms: number) => {
+  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+  return { days, hours, minutes, seconds };
+};
+
 export const useCountdown = (startDate: string | Date, endDate?: string | Date, onFinish?: () => void): CountdownTime => {
-  const [timeLeft, setTimeLeft] = useState<CountdownTime>({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    isExpired: false,
-    totalSeconds: 0,
-    phase: 'normal',
-    justFinished: false,
-    isRunning: false,
-    elapsedSeconds: 0,
-  });
-  const wasRunningRef = useRef(false);
-
-  const getPhase = useCallback((totalSeconds: number): CountdownPhase => {
-    if (totalSeconds <= 0) return 'just-finished';
-    if (totalSeconds <= 10) return 'final-ten';
-    if (totalSeconds <= 60) return 'final-minute';
-    return 'normal';
-  }, []);
-
-  useEffect(() => {
+  // 初期状態の判定（マウント時の状態を正確に把握）
+  const getInitialState = (): CountdownTime => {
+    const now = new Date().getTime();
     const startTime = new Date(startDate).getTime();
     const endTime = endDate ? new Date(endDate).getTime() : null;
-    
-    const updateCountdown = () => {
-      const now = new Date().getTime();
-      const startDifference = startTime - now;
-      const startTotalSeconds = Math.floor(startDifference / 1000);
+    const diff = startTime - now;
 
-      // イベント開始前
-      if (startDifference > 0) {
-        if (!wasRunningRef.current) {
-          wasRunningRef.current = true;
+    // 開始前
+    if (diff > 0) {
+      const { days, hours, minutes, seconds } = calculateTime(diff);
+      return {
+        days, hours, minutes, seconds,
+        isExpired: false,
+        totalSeconds: Math.floor(diff / 1000),
+        phase: getPhase(Math.floor(diff / 1000)),
+        justFinished: false,
+        isRunning: false,
+        elapsedSeconds: 0,
+      };
+    }
+
+    // 開催中
+    if (endTime && now >= startTime && now < endTime) {
+      const elapsed = now - startTime;
+      const { days, hours, minutes, seconds } = calculateTime(elapsed);
+      return {
+        days, hours, minutes, seconds,
+        isExpired: true,
+        totalSeconds: 0,
+        phase: 'normal', // 開催中は通常フェーズ
+        justFinished: false, // 既に開催中なので絶対にfalse
+        isRunning: true,
+        elapsedSeconds: Math.floor(elapsed / 1000),
+      };
+    }
+
+    // 終了済み
+    if (endTime && now >= endTime) {
+      const elapsed = now - endTime;
+      const { days, hours, minutes, seconds } = calculateTime(elapsed);
+      return {
+        days, hours, minutes, seconds,
+        isExpired: true,
+        totalSeconds: 0,
+        phase: 'normal', // 終了済みは通常フェーズ
+        justFinished: false, // 既に終了済みなので絶対にfalse
+        isRunning: false,
+        elapsedSeconds: Math.floor(elapsed / 1000),
+      };
+    }
+
+    // 開始済み（終了日なし）
+    const elapsed = Math.max(0, now - startTime);
+    const { days, hours, minutes, seconds } = calculateTime(elapsed);
+    return {
+      days, hours, minutes, seconds,
+      isExpired: true,
+      totalSeconds: 0,
+      phase: 'normal', // 開始済みは通常フェーズ
+      justFinished: false, // 既に開始済みなので絶対にfalse
+      isRunning: false,
+      elapsedSeconds: Math.floor(elapsed / 1000),
+    };
+  };
+
+  const [timeLeft, setTimeLeft] = useState<CountdownTime>(() => getInitialState());
+  
+  // 安定化のためのref
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const prevHasStartedRef = useRef<boolean | null>(null); // 前回の開始状態を記録
+  const justFinishedTimer = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // 日付が変わったらリセット
+    prevHasStartedRef.current = null; // 前回開始状態をリセット
+    if (justFinishedTimer.current) {
+      clearTimeout(justFinishedTimer.current);
+      justFinishedTimer.current = null;
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    const newState = getInitialState();
+    setTimeLeft(newState);
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date().getTime();
+      const startTime = new Date(startDate).getTime();
+      const endTime = endDate ? new Date(endDate).getTime() : null;
+      const diff = startTime - now;
+      
+      // 開始時刻を過ぎたかどうか
+      const hasStarted = diff <= 0;
+      
+      // 前回は開始していなかったが今回開始した場合
+      const prevHasStarted = prevHasStartedRef.current;
+      const justStarted = prevHasStarted === false && hasStarted === true;
+      
+      // デバッグログ
+      if (Math.abs(diff) < 10000) { // 開始時刻の前後10秒
+        console.log('Start debug:', {
+          diff,
+          hasStarted,
+          prevHasStarted,
+          justStarted
+        });
+      }
+      
+      // 前回の開始状態を更新
+      prevHasStartedRef.current = hasStarted;
+      
+      if (justStarted) {
+        console.log('🎉 Animation triggered! START!');
+        
+        // onFinish実行
+        if (onFinish) {
+          try {
+            onFinish();
+          } catch (error) {
+            console.error('Error in onFinish callback:', error);
+          }
         }
 
-        const days = Math.floor(startDifference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((startDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((startDifference % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((startDifference % (1000 * 60)) / 1000);
+        // アニメーション開始
+        setTimeLeft(prev => ({
+          ...prev,
+          isExpired: true,
+          justFinished: true,
+          isRunning: endTime ? now < endTime : false,
+        }));
 
+        // 3秒後にアニメーション終了
+        if (justFinishedTimer.current) {
+          clearTimeout(justFinishedTimer.current);
+        }
+        justFinishedTimer.current = setTimeout(() => {
+          console.log('Animation ended');
+          setTimeLeft(prev => ({ ...prev, justFinished: false }));
+        }, 3000);
+        
+        return;
+      }
+
+      // 開始前（カウントダウン中）
+      if (diff > 0) {
+        const { days, hours, minutes, seconds } = calculateTime(diff);
+        const currentTotalSeconds = Math.floor(diff / 1000);
+        
         setTimeLeft({
-          days,
-          hours,
-          minutes,
-          seconds,
+          days, hours, minutes, seconds,
           isExpired: false,
-          totalSeconds: startTotalSeconds,
-          phase: getPhase(startTotalSeconds),
+          totalSeconds: currentTotalSeconds,
+          phase: getPhase(currentTotalSeconds),
           justFinished: false,
           isRunning: false,
           elapsedSeconds: 0,
@@ -72,93 +195,66 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
         return;
       }
 
-      // イベント開始時
-      setTimeLeft(prev => {
-        if (!prev.isExpired && wasRunningRef.current && startDifference <= 0) {
-          const justFinished = true;
-          
-          if (justFinished && onFinish) {
-            onFinish();
-          }
-          
-          return {
-            ...prev,
-            isExpired: true,
-            phase: 'just-finished',
-            justFinished,
-            isRunning: endTime ? now < endTime : false,
-          };
-        }
-
-        // イベント開催中
-        if (endTime && now >= startTime && now < endTime) {
-          const elapsedMs = now - startTime;
-          const elapsedSeconds = Math.floor(elapsedMs / 1000);
-          
-          const days = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
-          const hours = Math.floor((elapsedMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-          const minutes = Math.floor((elapsedMs % (1000 * 60 * 60)) / (1000 * 60));
-          const seconds = Math.floor((elapsedMs % (1000 * 60)) / 1000);
-
-          return {
-            days,
-            hours,
-            minutes,
-            seconds,
-            isExpired: true,
-            totalSeconds: 0,
-            phase: 'just-finished',
-            justFinished: false,
-            isRunning: true,
-            elapsedSeconds,
-          };
-        }
-
-        // イベント終了後
-        if (endTime && now >= endTime) {
-          const elapsedMs = now - endTime;
-          const elapsedSeconds = Math.floor(elapsedMs / 1000);
-          
-          const days = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
-          const hours = Math.floor((elapsedMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-          const minutes = Math.floor((elapsedMs % (1000 * 60 * 60)) / (1000 * 60));
-          const seconds = Math.floor((elapsedMs % (1000 * 60)) / 1000);
-
-          return {
-            days,
-            hours,
-            minutes,
-            seconds,
-            isExpired: true,
-            totalSeconds: 0,
-            phase: 'just-finished',
-            justFinished: false,
-            isRunning: false,
-            elapsedSeconds,
-          };
-        }
-
-        // イベント開始したが終了日が設定されていない場合
-        return {
-          days: 0,
-          hours: 0,
-          minutes: 0,
-          seconds: 0,
+      // 開催中
+      if (endTime && now >= startTime && now < endTime) {
+        const elapsed = now - startTime;
+        const { days, hours, minutes, seconds } = calculateTime(elapsed);
+        setTimeLeft(prev => ({
+          days, hours, minutes, seconds,
           isExpired: true,
           totalSeconds: 0,
-          phase: 'just-finished',
+          phase: 'normal',
+          justFinished: prev.justFinished, // アニメーション中は維持
+          isRunning: true,
+          elapsedSeconds: Math.floor(elapsed / 1000),
+        }));
+        return;
+      }
+
+      // 終了済み
+      if (endTime && now >= endTime) {
+        const elapsed = now - endTime;
+        const { days, hours, minutes, seconds } = calculateTime(elapsed);
+        setTimeLeft({
+          days, hours, minutes, seconds,
+          isExpired: true,
+          totalSeconds: 0,
+          phase: 'normal',
           justFinished: false,
           isRunning: false,
-          elapsedSeconds: now - startTime > 0 ? Math.floor((now - startTime) / 1000) : 0,
-        };
-      });
+          elapsedSeconds: Math.floor(elapsed / 1000),
+        });
+        return;
+      }
+
+      // 開始済み（終了日なし）
+      const elapsed = Math.max(0, now - startTime);
+      const { days, hours, minutes, seconds } = calculateTime(elapsed);
+      setTimeLeft(prev => ({
+        days, hours, minutes, seconds,
+        isExpired: true,
+        totalSeconds: 0,
+        phase: 'normal',
+        justFinished: prev.justFinished, // アニメーション中は維持
+        isRunning: false,
+        elapsedSeconds: Math.floor(elapsed / 1000),
+      }));
     };
 
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
+    tick(); // 初回実行
+    intervalRef.current = setInterval(tick, 1000);
 
-    return () => clearInterval(interval);
-  }, [startDate, endDate, onFinish, getPhase]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (justFinishedTimer.current) {
+        clearTimeout(justFinishedTimer.current);
+        justFinishedTimer.current = null;
+      }
+    };
+  }, [startDate, endDate]); // onFinishを依存配列から削除してMaximum update depth exceeded を防ぐ
 
   return timeLeft;
 };
