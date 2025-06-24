@@ -117,7 +117,7 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
     }
     const newState = getInitialState();
     setTimeLeft(newState);
-  }, [startDate, endDate]);
+  }, [startDate, endDate, getInitialState]);
 
   useEffect(() => {
     const tick = () => {
@@ -254,7 +254,7 @@ export const useCountdown = (startDate: string | Date, endDate?: string | Date, 
         justFinishedTimer.current = null;
       }
     };
-  }, [startDate, endDate]); // onFinishを依存配列から削除してMaximum update depth exceeded を防ぐ
+  }, [startDate, endDate, onFinish]); // onFinishを依存配列に追加
 
   return timeLeft;
 };

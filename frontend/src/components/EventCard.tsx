@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Event } from '../types';
 import { CountdownTimer } from './CountdownTimer';
@@ -30,7 +30,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, searchTerm }) => {
   
   const backgroundImage = event.image_url || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&h=300&fit=crop';
 
-  const handleEventFinish = () => {
+  const handleEventFinish = useCallback(() => {
     // 既に通知済みの場合は何もしない
     if (hasNotifiedRef.current) {
       return;
@@ -43,7 +43,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, searchTerm }) => {
     
     hasNotifiedRef.current = true;
     showEventStarted(event.title);
-  };
+  }, [isStarted, showEventStarted, event.title]);
 
   return (
     <div className="relative h-80 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
