@@ -3,6 +3,7 @@ import { useEvents } from '../hooks/useEvents';
 import { EventTimeTabsWithPagination } from '../components/EventTimeTabsWithPagination';
 import { AdvancedSearchPanel } from '../components/AdvancedSearchPanel';
 import { SearchResultSummary } from '../components/SearchHighlight';
+import { SEOHead } from '../components/SEOHead';
 import { EventFilters, SortOption } from '../types';
 
 interface EventListPageProps {
@@ -192,14 +193,43 @@ export const EventListPage: React.FC<EventListPageProps> = ({
     );
   }
 
+  // SEO用のメタデータを動的に生成
+  const getSEOData = () => {
+    const categoryNames = {
+      today: '当日開催',
+      upcoming: '今後開催',
+      ongoing: '開催中',
+      ended: '終了済み'
+    };
+    
+    const baseTitle = 'CountdownHub - 日本全国のイベントカウントダウンタイマー';
+    const categoryTitle = categoryNames[activeTimeCategory];
+    const searchTitle = filters.search ? `「${filters.search}」の検索結果` : '';
+    
+    const title = searchTitle 
+      ? `${searchTitle} | ${baseTitle}`
+      : `${categoryTitle}イベント | ${baseTitle}`;
+    
+    const description = searchTitle
+      ? `「${filters.search}」に関するイベント${totalEvents}件を表示中。カウントダウンタイマーで開催日時をチェック！`
+      : `${categoryTitle}のイベント${totalEvents}件を表示中。コンサート、展示会、スポーツイベントなど様々なイベントの開催日時を一目で確認できます。`;
+    
+    return { title, description };
+  };
+
   return (
-    <div className="container mx-auto px-4 py-6">
-      {/* ページ説明 */}
-      <div className="mb-6 text-center">
-        <p className="text-gray-600 text-lg">
-          日本全国のイベントをカウントダウンでチェック！
-        </p>
-      </div>
+    <>
+      <SEOHead 
+        {...getSEOData()}
+        canonicalUrl={`https://countdown-hub.web.app/?category=${activeTimeCategory}`}
+      />
+      <div className="container mx-auto px-4 py-6">
+        {/* ページ説明 */}
+        <div className="mb-6 text-center">
+          <p className="text-gray-600 text-lg">
+            日本全国のイベントをカウントダウンでチェック！
+          </p>
+        </div>
 
       {/* 検索結果サマリー */}
       <SearchResultSummary
@@ -233,6 +263,7 @@ export const EventListPage: React.FC<EventListPageProps> = ({
         initialFilters={filters}
       />
 
-    </div>
+      </div>
+    </>
   );
 };

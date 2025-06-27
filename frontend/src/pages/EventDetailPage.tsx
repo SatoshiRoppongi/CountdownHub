@@ -5,6 +5,7 @@ import { CountdownTimer } from '../components/CountdownTimer';
 import { CommentSection } from '../components/CommentSection';
 import { StickyCountdownHeader } from '../components/StickyCountdownHeader';
 import { FullscreenCountdownOverlay } from '../components/FullscreenCountdownOverlay';
+import { SEOHead } from '../components/SEOHead';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { eventAPI } from '../services/api';
@@ -133,8 +134,50 @@ export const EventDetailPage: React.FC = () => {
     );
   }
 
+  // SEO用のメタデータを生成
+  const getSEODataForEvent = () => {
+    const startDate = new Date(event.start_datetime);
+    const formattedDate = startDate.toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    const title = `${event.title} - CountdownHub`;
+    const description = `${event.title}のカウントダウンタイマー。開催日時: ${formattedDate}。${event.description ? event.description.substring(0, 100) + '...' : 'イベント詳細をチェック！'}`;
+    
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Event",
+      "name": event.title,
+      "description": event.description || title,
+      "startDate": event.start_datetime,
+      "endDate": event.end_datetime,
+      "location": event.location ? {
+        "@type": "Place",
+        "name": event.location
+      } : undefined,
+      "image": event.image_url,
+      "url": `https://countdown-hub.web.app/events/${event.id}`,
+      "eventStatus": "https://schema.org/EventScheduled",
+      "eventAttendanceMode": event.venue_type === 'online' 
+        ? "https://schema.org/OnlineEventAttendanceMode"
+        : event.venue_type === 'hybrid'
+        ? "https://schema.org/MixedEventAttendanceMode"
+        : "https://schema.org/OfflineEventAttendanceMode"
+    };
+    
+    return { title, description, structuredData };
+  };
+
   return (
     <>
+      <SEOHead 
+        {...getSEODataForEvent()}
+        ogImage={event.image_url || '/og-image.png'}
+        canonicalUrl={`https://countdown-hub.web.app/events/${event.id}`}
+      />
+      
       {/* Sticky Header */}
       <StickyCountdownHeader
         targetDate={event.start_datetime}
