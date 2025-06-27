@@ -24,6 +24,7 @@ export const EventListPage: React.FC<EventListPageProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTimeCategory, setActiveTimeCategory] = useState<'today' | 'upcoming' | 'ongoing' | 'ended'>('today');
   const [showAdvancedPanel, setShowAdvancedPanel] = useState(false);
+  const [initialTabSet, setInitialTabSet] = useState(false);
   
   const itemsPerPage = 30;
   
@@ -64,6 +65,15 @@ export const EventListPage: React.FC<EventListPageProps> = ({
     setFilters(prev => ({ ...prev, sort_by, order, timeCategory: activeTimeCategory }));
   }, [currentSort, activeTimeCategory]);
 
+  // 当日イベント数を取得（初期タブ決定用）
+  const { data: todayEventsData } = useEvents({ 
+    timeCategory: 'today',
+    sort_by: 'start_datetime',
+    order: 'asc',
+    page: 1,
+    limit: 1
+  });
+
   const { 
     data, 
     isLoading, 
@@ -73,6 +83,17 @@ export const EventListPage: React.FC<EventListPageProps> = ({
     page: currentPage, 
     limit: itemsPerPage 
   });
+
+  // 初期タブ設定（当日イベントがない場合は「今後開催」に変更）
+  useEffect(() => {
+    if (!initialTabSet && todayEventsData) {
+      const todayEventCount = todayEventsData.pagination?.total || 0;
+      if (todayEventCount === 0) {
+        setActiveTimeCategory('upcoming');
+      }
+      setInitialTabSet(true);
+    }
+  }, [todayEventsData, initialTabSet]);
 
   const events = data?.events || [];
   const totalEvents = data?.pagination?.total || 0;
