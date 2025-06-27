@@ -1,16 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#3b82f6" />
     <meta name="google-adsense-account" content="ca-pub-3395769211664008">
-    <meta
-      name="description"
-      content="イベントのカウントダウンタイマーを管理するウェブアプリケーション"
-    />
+    
+    <!-- SEO メタタグ -->
+    <meta name="description" content="日本全国のイベントをカウントダウンタイマーで管理。コンサート、展示会、スポーツイベントなど様々なイベントの開催日時を一目で確認できます。" />
+    <meta name="keywords" content="イベント,カウントダウン,タイマー,コンサート,展示会,スポーツ,日本,開催日時,イベント情報" />
+    <meta name="author" content="CountdownHub" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://countdown-hub.web.app/" />
+    
+    <!-- OGP タグ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CountdownHub - イベントカウントダウンタイマー" />
+    <meta property="og:description" content="日本全国のイベントをカウントダウンタイマーで管理。コンサート、展示会、スポーツイベントなど様々なイベントの開催日時を一目で確認できます。" />
+    <meta property="og:url" content="https://countdown-hub.web.app/" />
+    <meta property="og:site_name" content="CountdownHub" />
+    <meta property="og:image" content="%PUBLIC_URL%/og-image.png" />
+    <meta property="og:image:alt" content="CountdownHub - イベントカウントダウンタイマー" />
+    <meta property="og:locale" content="ja_JP" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="CountdownHub - イベントカウントダウンタイマー" />
+    <meta name="twitter:description" content="日本全国のイベントをカウントダウンタイマーで管理。コンサート、展示会、スポーツイベントなど様々なイベントの開催日時を一目で確認できます。" />
+    <meta name="twitter:image" content="%PUBLIC_URL%/og-image.png" />
+    
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
@@ -26,7 +46,31 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>カウントダウンハブ</title>
+    <title>CountdownHub - 日本全国のイベントカウントダウンタイマー</title>
+    
+    <!-- 構造化データ (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "CountdownHub",
+      "description": "日本全国のイベントをカウントダウンタイマーで管理するウェブアプリケーション",
+      "url": "https://countdown-hub.web.app/",
+      "applicationCategory": "EventApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "CountdownHub"
+      },
+      "inLanguage": "ja"
+    }
+    </script>
+    
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3395769211664008"
          crossorigin="anonymous"></script>
   </head>

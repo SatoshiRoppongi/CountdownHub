@@ -1,3 +1,23 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+
+# サイトマップの場所
+Sitemap: https://countdown-hub.web.app/sitemap.xml
+
+# 不要なパスをブロック
+Disallow: /api/
+Disallow: /admin/
+Disallow: /*.json$
+Disallow: /static/js/
+Disallow: /static/css/
+
+# 主要な検索エンジン向けの設定
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# クロール頻度の調整（1日1回程度）
+Crawl-delay: 86400
