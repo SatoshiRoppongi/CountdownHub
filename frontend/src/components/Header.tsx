@@ -108,6 +108,13 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   🔍
                 </button>
+                <Link
+                  to="/users/search"
+                  className="inline-flex items-center px-3 py-2 text-sm text-green-600 border border-green-600 rounded-lg hover:bg-green-50 transition-colors"
+                  title="ユーザー検索"
+                >
+                  👥
+                </Link>
               </div>
             </div>
           </div>
@@ -271,6 +278,19 @@ export const Header: React.FC<HeaderProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
+            <Link
+              to="/users/search"
+              onClick={() => setIsMobileSearchOpen(false)}
+              className="w-full flex items-center justify-between p-3 text-left bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">👥</span>
+                <span className="font-medium text-gray-900">ユーザー検索</span>
+              </div>
+              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
           
           {/* 検索のヒント */}

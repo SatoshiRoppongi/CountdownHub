@@ -19,6 +19,7 @@ export interface EventFormData {
   site_url: string;
   image_url: string;
   tags: string;
+  is_public: boolean;
 }
 
 // イベントバリデーションスキーマ

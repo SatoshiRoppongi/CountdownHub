@@ -22,6 +22,7 @@ import notificationRoutes from './routes/notifications';
 import firebaseAuthRoutes from './routes/firebaseAuth';
 import contactRoutes from './routes/contact';
 import announcementRoutes from './routes/announcements';
+import reportRoutes from './routes/reports';
 import './config/passport'; // Passport設定を読み込み
 
 const app = express();
@@ -158,6 +159,7 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

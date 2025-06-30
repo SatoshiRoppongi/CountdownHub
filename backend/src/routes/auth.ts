@@ -13,7 +13,14 @@ import {
   twitterCallback,
   linkSocialAccount,
   unlinkSocialAccount,
-  checkDisplayNameAvailability
+  checkDisplayNameAvailability,
+  getUserProfile,
+  getUserPublicEvents,
+  searchUsers,
+  followUser,
+  unfollowUser,
+  getUserFollowers,
+  getUserFollowing
 } from '../controllers/authController';
 import { authenticateToken } from '../middleware/auth';
 
@@ -117,5 +124,16 @@ router.get('/google/debug', (req, res) => {
 // ソーシャルアカウント管理
 router.post('/link-social', authenticateToken, linkSocialAccount);
 router.post('/unlink-social', authenticateToken, unlinkSocialAccount);
+
+// ユーザー検索・プロフィール関連
+router.get('/search/users', searchUsers);
+router.get('/users/:username', getUserProfile);
+router.get('/users/:username/events', getUserPublicEvents);
+
+// フォロー・フォロワー機能
+router.post('/users/:username/follow', authenticateToken, followUser);
+router.delete('/users/:username/follow', authenticateToken, unfollowUser);
+router.get('/users/:username/followers', getUserFollowers);
+router.get('/users/:username/following', getUserFollowing);
 
 export default router;
