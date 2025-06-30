@@ -10,6 +10,7 @@ export interface Event {
   image_url: string | null;
   tags: string[];
   is_active: boolean;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
   user_id: string | null;
@@ -34,6 +35,12 @@ export interface Comment {
   created_at: string;
   updated_at: string;
   user_id: string | null;
+  user?: {
+    id: string;
+    username: string;
+    display_name: string;
+    avatar_url?: string;
+  };
 }
 
 export interface EventsResponse {
@@ -71,6 +78,7 @@ export interface AdminStats {
   events: number;
   comments: number;
   reportedComments: number;
+  users: number;
 }
 
 export interface User {
@@ -79,12 +87,20 @@ export interface User {
   username: string;
   display_name: string;
   avatar_url?: string;
+  bio?: string;
   created_at: string;
   auth_provider?: string;
   google_id?: string;
   github_id?: string;
   twitter_id?: string;
   line_id?: string;
+  is_active?: boolean;
+  is_admin?: boolean;
+  updated_at?: string;
+  _count?: {
+    events: number;
+    comments: number;
+  };
 }
 
 export interface Announcement {

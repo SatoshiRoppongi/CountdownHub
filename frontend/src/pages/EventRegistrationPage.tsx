@@ -32,6 +32,7 @@ export const EventRegistrationPage: React.FC = () => {
     site_url: '',
     image_url: '',
     tags: '',
+    is_public: true,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -54,6 +55,7 @@ export const EventRegistrationPage: React.FC = () => {
         site_url: editEvent.site_url || '',
         image_url: editEvent.image_url || '',
         tags: editEvent.tags ? editEvent.tags.join(', ') : '',
+        is_public: editEvent.is_public !== undefined ? editEvent.is_public : true,
       });
     }
   }, [isEditMode, editEvent]);
@@ -100,6 +102,7 @@ export const EventRegistrationPage: React.FC = () => {
         .split(',')
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0),
+      is_public: formData.is_public,
     };
 
     console.log('Sending event data:', eventData);
@@ -129,8 +132,15 @@ export const EventRegistrationPage: React.FC = () => {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
-    const newFormData = { ...formData, [name]: value };
+    const { name, value, type } = e.target;
+    let newValue: any = value;
+    
+    // Handle boolean values for checkboxes/radio buttons
+    if (type === 'radio' && name === 'is_public') {
+      newValue = value === 'true';
+    }
+    
+    const newFormData = { ...formData, [name]: newValue };
     setFormData(newFormData);
     
     // Clear error when user starts typing
@@ -375,6 +385,52 @@ export const EventRegistrationPage: React.FC = () => {
               helperText="複数のタグはカンマで区切って入力してください（最大10個、各タグ20文字以下）"
               icon="🏷️"
             />
+
+            {/* 公開設定 */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="text-2xl">🔒</div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">公開設定</h3>
+                  <div className="space-y-3">
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="is_public"
+                        value="true"
+                        checked={formData.is_public === true}
+                        onChange={(e) => setFormData({ ...formData, is_public: true })}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-900">🌐 公開イベント</div>
+                        <div className="text-sm text-gray-600">
+                          誰でもイベントを閲覧できます。イベント一覧にも表示されます。
+                        </div>
+                      </div>
+                    </label>
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="is_public"
+                        value="false"
+                        checked={formData.is_public === false}
+                        onChange={(e) => setFormData({ ...formData, is_public: false })}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-900">🔒 プライベートイベント</div>
+                        <div className="text-sm text-gray-600">
+                          URLを知っている人のみ閲覧可能です。イベント一覧には表示されません。
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* 送信エラーメッセージ */}
             {errors.submit && (

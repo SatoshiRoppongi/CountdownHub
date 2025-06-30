@@ -7,6 +7,7 @@ interface User {
   username: string;
   display_name: string;
   avatar_url?: string;
+  bio?: string;
   created_at: string;
   auth_provider?: string;
   google_id?: string;

@@ -23,11 +23,17 @@ const registerSchema = z.object({
     .optional()
 });
 
-// ニックネーム更新用スキーマ
-const updateDisplayNameSchema = z.object({
+
+// プロフィール更新用スキーマ
+const updateProfileSchema = z.object({
   display_name: z.string()
     .min(1, 'ニックネームを入力してください')
     .max(100, 'ニックネームは100文字以下で入力してください')
+    .optional(),
+  bio: z.string()
+    .max(500, '自己紹介文は500文字以下で入力してください')
+    .optional()
+    .nullable()
 });
 
 const loginSchema = z.object({
@@ -337,51 +343,64 @@ export const updateProfile = async (req: Request, res: Response) => {
       return res.status(401).json({ error: '認証が必要です' });
     }
 
-    const validatedData = updateDisplayNameSchema.parse(req.body);
-    const { display_name } = validatedData;
-    const trimmedDisplayName = display_name.trim();
+    const validatedData = updateProfileSchema.parse(req.body);
+    const { display_name, bio } = validatedData;
 
-    // ニックネーム重複チェック（自分以外）
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        AND: [
-          { display_name: trimmedDisplayName },
-          { id: { not: userId } }
-        ]
-      }
-    });
+    const updateData: any = { updated_at: new Date() };
 
-    if (existingUser) {
-      return res.status(400).json({ 
-        error: 'このニックネームは既に使用されています。異なるニックネームを設定してください。' 
+    // ニックネーム更新の場合
+    if (display_name !== undefined) {
+      const trimmedDisplayName = display_name.trim();
+
+      // ニックネーム重複チェック（自分以外）
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          AND: [
+            { display_name: trimmedDisplayName },
+            { id: { not: userId } }
+          ]
+        }
       });
+
+      if (existingUser) {
+        return res.status(400).json({ 
+          error: 'このニックネームは既に使用されています。異なるニックネームを設定してください。' 
+        });
+      }
+
+      updateData.display_name = trimmedDisplayName;
+    }
+
+    // 自己紹介文更新の場合
+    if (bio !== undefined) {
+      updateData.bio = bio ? bio.trim() : null;
     }
 
     // ユーザー情報を更新
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: {
-        display_name: trimmedDisplayName,
-        updated_at: new Date()
-      },
+      data: updateData,
       select: {
         id: true,
         email: true,
         username: true,
         display_name: true,
         avatar_url: true,
+        bio: true,
         created_at: true
-      }
+      } as any
     });
 
-    // ユーザーのすべてのコメントの表示名も更新
-    await prisma.comment.updateMany({
-      where: { user_id: userId },
-      data: {
-        author_name: trimmedDisplayName,
-        updated_at: new Date()
-      }
-    });
+    // ニックネームが更新された場合、ユーザーのすべてのコメントの表示名も更新
+    if (display_name !== undefined) {
+      await prisma.comment.updateMany({
+        where: { user_id: userId },
+        data: {
+          author_name: updateData.display_name,
+          updated_at: new Date()
+        }
+      });
+    }
 
     res.json({
       message: 'プロフィールを更新しました',
@@ -766,6 +785,474 @@ export const unlinkSocialAccount = async (req: Request, res: Response) => {
     console.error('Unlink social account error:', error);
     res.status(500).json({
       error: 'アカウント連携解除に失敗しました'
+    });
+  }
+};
+
+// 他のユーザーのプロフィール取得（パブリック）
+export const getUserProfile = async (req: Request, res: Response) => {
+  try {
+    const { username } = req.params;
+    const currentUserId = (req as any).user?.id;
+
+    const user = await prisma.user.findUnique({
+      where: { 
+        username,
+        is_active: true 
+      },
+      select: {
+        id: true,
+        username: true,
+        display_name: true,
+        avatar_url: true,
+        created_at: true,
+        // bio: true, // 自己紹介文（一時的にコメントアウト）
+        _count: {
+          select: {
+            events: {
+              where: {
+                is_active: true,
+                is_public: true // 公開イベントのみ
+              } as any
+            },
+            comments: true,
+            followers: true, // フォロワー数
+            following: true  // フォロー数
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'ユーザーが見つかりません' });
+    }
+
+    // 現在のユーザーがこのユーザーをフォローしているかチェック
+    let isFollowing = false;
+    if (currentUserId && currentUserId !== user.id) {
+      const followRelation = await prisma.follow.findUnique({
+        where: {
+          follower_id_following_id: {
+            follower_id: currentUserId,
+            following_id: user.id
+          }
+        }
+      });
+      isFollowing = !!followRelation;
+    }
+
+    res.json({
+      user: {
+        ...user,
+        isFollowing
+      }
+    });
+
+  } catch (error) {
+    console.error('Get user profile error:', error);
+    res.status(500).json({
+      error: 'ユーザープロフィール取得に失敗しました'
+    });
+  }
+};
+
+// 他のユーザーの公開イベント一覧取得
+export const getUserPublicEvents = async (req: Request, res: Response) => {
+  try {
+    const { username } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const user = await prisma.user.findUnique({
+      where: { 
+        username,
+        is_active: true 
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'ユーザーが見つかりません' });
+    }
+
+    const [events, total] = await Promise.all([
+      prisma.event.findMany({
+        where: {
+          user_id: user.id,
+          is_active: true,
+          is_public: true // 公開イベントのみ
+        } as any,
+        include: {
+          user: {
+            select: {
+              id: true,
+              display_name: true,
+              username: true
+            }
+          },
+          _count: {
+            select: {
+              comments: true,
+              favorites: true
+            }
+          }
+        },
+        orderBy: { start_datetime: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.event.count({
+        where: {
+          user_id: user.id,
+          is_active: true,
+          is_public: true // 公開イベントのみ
+        } as any
+      })
+    ]);
+
+    res.json({
+      events,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Get user public events error:', error);
+    res.status(500).json({
+      error: 'ユーザーイベント取得に失敗しました'
+    });
+  }
+};
+
+// ユーザー検索
+export const searchUsers = async (req: Request, res: Response) => {
+  try {
+    const { search, page = 1, limit = 20 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    if (!search || typeof search !== 'string') {
+      return res.status(400).json({ error: '検索キーワードを指定してください' });
+    }
+
+    const searchTerm = search.trim();
+    if (searchTerm.length === 0) {
+      return res.status(400).json({ error: '検索キーワードを入力してください' });
+    }
+
+    // 検索条件
+    const whereConditions = {
+      is_active: true,
+      OR: [
+        {
+          username: {
+            contains: searchTerm,
+            mode: 'insensitive' as const
+          }
+        },
+        {
+          display_name: {
+            contains: searchTerm,
+            mode: 'insensitive' as const
+          }
+        }
+      ]
+    };
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where: whereConditions,
+        select: {
+          id: true,
+          username: true,
+          display_name: true,
+          avatar_url: true,
+          // bio: true, // 一時的にコメントアウト
+          created_at: true,
+          _count: {
+            select: {
+              events: {
+                where: {
+                  is_active: true,
+                  is_public: true
+                } as any
+              },
+              comments: true
+            }
+          }
+        },
+        orderBy: [
+          { display_name: 'asc' },
+          { username: 'asc' }
+        ],
+        skip,
+        take: Number(limit)
+      }),
+      prisma.user.count({
+        where: whereConditions
+      })
+    ]);
+
+    res.json({
+      users,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        totalPages: Math.ceil(total / Number(limit))
+      }
+    });
+
+  } catch (error) {
+    console.error('Search users error:', error);
+    res.status(500).json({
+      error: 'ユーザー検索に失敗しました'
+    });
+  }
+};
+
+// ユーザーをフォローする
+export const followUser = async (req: Request, res: Response) => {
+  try {
+    const { username } = req.params;
+    const currentUserId = (req as any).user?.id;
+
+    if (!currentUserId) {
+      return res.status(401).json({ error: '認証が必要です' });
+    }
+
+    // フォロー対象のユーザーを取得
+    const targetUser = await prisma.user.findUnique({
+      where: { 
+        username,
+        is_active: true 
+      },
+      select: { id: true, username: true, display_name: true }
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'ユーザーが見つかりません' });
+    }
+
+    // 自分自身をフォローしようとした場合
+    if (targetUser.id === currentUserId) {
+      return res.status(400).json({ error: '自分自身をフォローすることはできません' });
+    }
+
+    // 既にフォローしているかチェック
+    const existingFollow = await prisma.follow.findUnique({
+      where: {
+        follower_id_following_id: {
+          follower_id: currentUserId,
+          following_id: targetUser.id
+        }
+      }
+    });
+
+    if (existingFollow) {
+      return res.status(400).json({ error: '既にフォローしています' });
+    }
+
+    // フォロー関係を作成
+    await prisma.follow.create({
+      data: {
+        follower_id: currentUserId,
+        following_id: targetUser.id
+      }
+    });
+
+    res.json({
+      message: `${targetUser.display_name}さんをフォローしました`,
+      isFollowing: true
+    });
+
+  } catch (error) {
+    console.error('Follow user error:', error);
+    res.status(500).json({
+      error: 'フォローに失敗しました'
+    });
+  }
+};
+
+// ユーザーのフォローを解除する
+export const unfollowUser = async (req: Request, res: Response) => {
+  try {
+    const { username } = req.params;
+    const currentUserId = (req as any).user?.id;
+
+    if (!currentUserId) {
+      return res.status(401).json({ error: '認証が必要です' });
+    }
+
+    // フォロー対象のユーザーを取得
+    const targetUser = await prisma.user.findUnique({
+      where: { 
+        username,
+        is_active: true 
+      },
+      select: { id: true, username: true, display_name: true }
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'ユーザーが見つかりません' });
+    }
+
+    // フォロー関係を削除
+    const deletedFollow = await prisma.follow.deleteMany({
+      where: {
+        follower_id: currentUserId,
+        following_id: targetUser.id
+      }
+    });
+
+    if (deletedFollow.count === 0) {
+      return res.status(400).json({ error: 'フォローしていません' });
+    }
+
+    res.json({
+      message: `${targetUser.display_name}さんのフォローを解除しました`,
+      isFollowing: false
+    });
+
+  } catch (error) {
+    console.error('Unfollow user error:', error);
+    res.status(500).json({
+      error: 'フォロー解除に失敗しました'
+    });
+  }
+};
+
+// ユーザーのフォロワー一覧取得
+export const getUserFollowers = async (req: Request, res: Response) => {
+  try {
+    const { username } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const user = await prisma.user.findUnique({
+      where: { 
+        username,
+        is_active: true 
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'ユーザーが見つかりません' });
+    }
+
+    const [followers, total] = await Promise.all([
+      prisma.follow.findMany({
+        where: { following_id: user.id },
+        include: {
+          follower: {
+            select: {
+              id: true,
+              username: true,
+              display_name: true,
+              avatar_url: true,
+              // bio: true, // 一時的にコメントアウト
+              _count: {
+                select: {
+                  followers: true,
+                  following: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.follow.count({
+        where: { following_id: user.id }
+      })
+    ]);
+
+    res.json({
+      followers: followers.map(f => f.follower),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Get user followers error:', error);
+    res.status(500).json({
+      error: 'フォロワー取得に失敗しました'
+    });
+  }
+};
+
+// ユーザーのフォロー一覧取得
+export const getUserFollowing = async (req: Request, res: Response) => {
+  try {
+    const { username } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const user = await prisma.user.findUnique({
+      where: { 
+        username,
+        is_active: true 
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'ユーザーが見つかりません' });
+    }
+
+    const [following, total] = await Promise.all([
+      prisma.follow.findMany({
+        where: { follower_id: user.id },
+        include: {
+          following: {
+            select: {
+              id: true,
+              username: true,
+              display_name: true,
+              avatar_url: true,
+              // bio: true, // 一時的にコメントアウト
+              _count: {
+                select: {
+                  followers: true,
+                  following: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.follow.count({
+        where: { follower_id: user.id }
+      })
+    ]);
+
+    res.json({
+      following: following.map(f => f.following),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Get user following error:', error);
+    res.status(500).json({
+      error: 'フォロー中ユーザー取得に失敗しました'
     });
   }
 };

@@ -134,6 +134,95 @@ export const adminAPI = {
     });
     return response.data;
   },
+
+  checkStatus: async (): Promise<{ isAdmin: boolean; details: any }> => {
+    const response = await api.get('/admin/status');
+    return response.data;
+  },
+
+  getUsers: async (params: { 
+    page?: number; 
+    limit?: number; 
+    search?: string; 
+  } = {}): Promise<{
+    users: Array<{
+      id: string;
+      username: string;
+      display_name: string;
+      email: string;
+      avatar_url?: string;
+      is_active: boolean;
+      is_admin: boolean;
+      auth_provider: string;
+      created_at: string;
+      updated_at: string;
+      _count: {
+        events: number;
+        comments: number;
+      };
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> => {
+    const response = await api.get('/admin/users', { params });
+    return response.data;
+  },
+
+  getUserById: async (id: string): Promise<{
+    id: string;
+    username: string;
+    display_name: string;
+    email: string;
+    avatar_url?: string;
+    is_active: boolean;
+    is_admin: boolean;
+    auth_provider: string;
+    created_at: string;
+    updated_at: string;
+    events: Array<{
+      id: number;
+      title: string;
+      start_datetime: string;
+      is_active: boolean;
+      created_at: string;
+    }>;
+    comments: Array<{
+      id: number;
+      content: string;
+      is_reported: boolean;
+      created_at: string;
+      event: {
+        id: number;
+        title: string;
+      };
+    }>;
+    _count: {
+      events: number;
+      comments: number;
+    };
+  }> => {
+    const response = await api.get(`/admin/users/${id}`);
+    return response.data;
+  },
+
+  updateUserStatus: async (id: string, data: {
+    is_active?: boolean;
+    is_admin?: boolean;
+  }): Promise<{
+    id: string;
+    username: string;
+    display_name: string;
+    email: string;
+    is_active: boolean;
+    is_admin: boolean;
+  }> => {
+    const response = await api.patch(`/admin/users/${id}/status`, data);
+    return response.data;
+  },
 };
 
 export const favoriteAPI = {
@@ -181,7 +270,8 @@ export const authAPI = {
   },
 
   updateProfile: async (userData: {
-    display_name: string;
+    display_name?: string;
+    bio?: string;
   }): Promise<{ message: string; user: any }> => {
     const response = await api.patch('/auth/profile', userData);
     return response.data;
@@ -208,6 +298,128 @@ export const userAPI = {
 
   getUserComments: async (): Promise<{ comments: (Comment & { event: { id: number; title: string } })[] }> => {
     const response = await api.get('/users/comments');
+    return response.data;
+  },
+
+  getUserProfile: async (username: string): Promise<{
+    user: {
+      id: string;
+      username: string;
+      display_name: string;
+      avatar_url?: string;
+      bio?: string;
+      created_at: string;
+      _count: {
+        events: number;
+        comments: number;
+        followers: number;
+        following: number;
+      };
+      isFollowing: boolean;
+    };
+  }> => {
+    const response = await api.get(`/auth/users/${username}`);
+    return response.data;
+  },
+
+  getUserPublicEvents: async (username: string, page = 1, limit = 20): Promise<EventsResponse> => {
+    const response = await api.get(`/auth/users/${username}/events`, { params: { page, limit } });
+    return response.data;
+  },
+
+  searchUsers: async (params: {
+    search: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    users: Array<{
+      id: string;
+      username: string;
+      display_name: string;
+      avatar_url?: string;
+      bio?: string;
+      created_at: string;
+      _count: {
+        events: number;
+        comments: number;
+      };
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> => {
+    const response = await api.get('/auth/search/users', { params });
+    return response.data;
+  },
+
+  followUser: async (username: string): Promise<{
+    message: string;
+    isFollowing: boolean;
+  }> => {
+    const response = await api.post(`/auth/users/${username}/follow`);
+    return response.data;
+  },
+
+  unfollowUser: async (username: string): Promise<{
+    message: string;
+    isFollowing: boolean;
+  }> => {
+    const response = await api.delete(`/auth/users/${username}/follow`);
+    return response.data;
+  },
+
+  getUserFollowers: async (username: string, params: { 
+    page?: number; 
+    limit?: number; 
+  } = {}): Promise<{
+    followers: Array<{
+      id: string;
+      username: string;
+      display_name: string;
+      avatar_url?: string;
+      bio?: string;
+      _count: {
+        followers: number;
+        following: number;
+      };
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> => {
+    const response = await api.get(`/auth/users/${username}/followers`, { params });
+    return response.data;
+  },
+
+  getUserFollowing: async (username: string, params: { 
+    page?: number; 
+    limit?: number; 
+  } = {}): Promise<{
+    following: Array<{
+      id: string;
+      username: string;
+      display_name: string;
+      avatar_url?: string;
+      bio?: string;
+      _count: {
+        followers: number;
+        following: number;
+      };
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> => {
+    const response = await api.get(`/auth/users/${username}/following`, { params });
     return response.data;
   },
 };
@@ -293,6 +505,84 @@ export const notificationAPI = {
     message: string;
   }> => {
     const response = await api.patch('/notifications/settings', settings);
+    return response.data;
+  },
+};
+
+export const reportAPI = {
+  createReport: async (data: {
+    type: 'user' | 'comment' | 'event';
+    target_id: string;
+    reason: string;
+    description?: string;
+  }): Promise<{
+    message: string;
+    report: {
+      id: number;
+      type: string;
+      reason: string;
+      status: string;
+      created_at: string;
+    };
+  }> => {
+    const response = await api.post('/reports', data);
+    return response.data;
+  },
+
+  getReports: async (params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    type?: string;
+  } = {}): Promise<{
+    reports: Array<{
+      id: number;
+      type: string;
+      target_id: string;
+      reason: string;
+      description?: string;
+      status: string;
+      created_at: string;
+      updated_at: string;
+      target_info?: any;
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> => {
+    const response = await api.get('/reports', { params });
+    return response.data;
+  },
+
+  updateReportStatus: async (id: number, data: {
+    status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+    admin_note?: string;
+  }): Promise<{
+    message: string;
+    report: any;
+  }> => {
+    const response = await api.patch(`/reports/${id}/status`, data);
+    return response.data;
+  },
+
+  getReportStats: async (): Promise<{
+    total: number;
+    by_status: {
+      pending: number;
+      reviewed: number;
+      resolved: number;
+      dismissed: number;
+    };
+    by_type: {
+      user: number;
+      comment: number;
+      event: number;
+    };
+  }> => {
+    const response = await api.get('/reports/stats');
     return response.data;
   },
 };

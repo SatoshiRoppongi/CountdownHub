@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { eventAPI } from '../services/api';
 import { Comment } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { ReportButton } from './ReportButton';
 
 interface CommentSectionProps {
   eventId: number;
@@ -308,9 +309,33 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
             <div key={comment.id} className="border-b border-gray-200 pb-4 last:border-b-0">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-1 sm:gap-2">
                 <div className="flex flex-col sm:flex-row sm:items-center min-w-0">
-                  <span className="font-medium text-gray-900 mr-0 sm:mr-3 text-sm sm:text-base truncate">
-                    {comment.author_name}
-                  </span>
+                  <div className="flex items-center space-x-2 mr-0 sm:mr-3">
+                    {comment.user?.avatar_url ? (
+                      <img
+                        src={comment.user.avatar_url}
+                        alt={comment.author_name}
+                        className="w-6 h-6 rounded-full flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-gray-600">
+                          {comment.author_name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    {comment.user?.username ? (
+                      <Link
+                        to={`/users/${comment.user.username}`}
+                        className="font-medium text-blue-600 hover:text-blue-800 text-sm sm:text-base truncate transition-colors"
+                      >
+                        {comment.author_name}
+                      </Link>
+                    ) : (
+                      <span className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                        {comment.author_name}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center space-x-1 sm:space-x-2">
                     <span className="text-xs sm:text-sm text-gray-500">
                       {formatDate(comment.created_at)}
@@ -328,22 +353,32 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ eventId }) => {
                       通報済み
                     </span>
                   )}
-                  {!comment.is_reported && isAuthenticated && user && comment.user_id === user.id && (
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={() => handleEditStart(comment)}
-                        className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm underline whitespace-nowrap"
-                      >
-                        編集
-                      </button>
-                      <button
-                        onClick={() => handleDelete(comment.id)}
-                        className="text-red-600 hover:text-red-800 text-xs sm:text-sm underline whitespace-nowrap"
-                      >
-                        削除
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center space-x-1">
+                    {!comment.is_reported && isAuthenticated && user && comment.user_id === user.id && (
+                      <>
+                        <button
+                          onClick={() => handleEditStart(comment)}
+                          className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm underline whitespace-nowrap"
+                        >
+                          編集
+                        </button>
+                        <button
+                          onClick={() => handleDelete(comment.id)}
+                          className="text-red-600 hover:text-red-800 text-xs sm:text-sm underline whitespace-nowrap"
+                        >
+                          削除
+                        </button>
+                      </>
+                    )}
+                    {!comment.is_reported && isAuthenticated && user && comment.user_id !== user.id && (
+                      <ReportButton 
+                        type="comment"
+                        targetId={comment.id.toString()}
+                        size="sm"
+                        className="text-xs"
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
 

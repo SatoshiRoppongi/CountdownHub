@@ -7,7 +7,8 @@ import { Event } from '../types';
 import { Link } from 'react-router-dom';
 
 interface UserProfileUpdate {
-  display_name: string;
+  display_name?: string;
+  bio?: string;
 }
 
 export const ProfilePage: React.FC = () => {
@@ -16,16 +17,19 @@ export const ProfilePage: React.FC = () => {
   const queryClient = useQueryClient();
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [newNickname, setNewNickname] = useState(user?.display_name || '');
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [newBio, setNewBio] = useState(user?.bio || '');
   const [activeTab, setActiveTab] = useState<'events' | 'comments'>('events');
   const [nicknameStatus, setNicknameStatus] = useState<'available' | 'unavailable' | 'checking' | null>(null);
   const [nicknameError, setNicknameError] = useState<string>('');
 
-  // ユーザー情報が更新されたときにnewNicknameを同期
+  // ユーザー情報が更新されたときに値を同期
   useEffect(() => {
     setNewNickname(user?.display_name || '');
+    setNewBio(user?.bio || '');
     setNicknameStatus(null);
     setNicknameError('');
-  }, [user?.display_name]);
+  }, [user?.display_name, user?.bio]);
 
   // ニックネーム重複チェック
   const checkNicknameAvailability = useCallback(
@@ -96,7 +100,7 @@ export const ProfilePage: React.FC = () => {
     enabled: !!token,
   });
 
-  // プロフィール更新
+  // プロフィール更新（ニックネーム）
   const updateProfileMutation = useMutation({
     mutationFn: (profileData: UserProfileUpdate) => authAPI.updateProfile(profileData),
     onSuccess: (data) => {
@@ -118,6 +122,31 @@ export const ProfilePage: React.FC = () => {
         type: 'error',
         title: 'エラー',
         message: 'ニックネームの更新に失敗しました',
+      });
+    },
+  });
+
+  // 自己紹介文更新
+  const updateBioMutation = useMutation({
+    mutationFn: (bioData: { bio: string }) => authAPI.updateProfile(bioData),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      // APIレスポンスから直接ユーザー情報を更新
+      if (data && data.user) {
+        updateUser(data.user);
+      }
+      showToast({
+        type: 'success',
+        title: '更新完了',
+        message: '自己紹介文を更新しました',
+      });
+      setIsEditingBio(false);
+    },
+    onError: () => {
+      showToast({
+        type: 'error',
+        title: 'エラー',
+        message: '自己紹介文の更新に失敗しました',
       });
     },
   });
@@ -195,6 +224,10 @@ export const ProfilePage: React.FC = () => {
     }
 
     updateProfileMutation.mutate({ display_name: newNickname.trim() });
+  };
+
+  const handleSaveBio = () => {
+    updateBioMutation.mutate({ bio: newBio.trim() });
   };
 
   const handleDeleteEvent = (eventId: number) => {
@@ -317,6 +350,69 @@ export const ProfilePage: React.FC = () => {
         </div>
       </div>
 
+      {/* 自己紹介文セクション */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">自己紹介</h2>
+          {!isEditingBio && (
+            <button
+              onClick={() => setIsEditingBio(true)}
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+              title="自己紹介を編集"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+          )}
+        </div>
+        
+        {isEditingBio ? (
+          <div className="space-y-4">
+            <div>
+              <textarea
+                value={newBio}
+                onChange={(e) => setNewBio(e.target.value)}
+                maxLength={500}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                placeholder="自己紹介文を入力してください（最大500文字）"
+              />
+              <div className="flex justify-between text-sm text-gray-500 mt-1">
+                <span>最大500文字</span>
+                <span>{newBio.length}/500</span>
+              </div>
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={handleSaveBio}
+                disabled={updateBioMutation.isPending}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+              >
+                {updateBioMutation.isPending ? '保存中...' : '保存'}
+              </button>
+              <button
+                onClick={() => {
+                  setIsEditingBio(false);
+                  setNewBio(user?.bio || '');
+                }}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="min-h-[60px]">
+            {user?.bio ? (
+              <p className="text-gray-800 whitespace-pre-wrap">{user.bio}</p>
+            ) : (
+              <p className="text-gray-500 italic">まだ自己紹介が設定されていません。</p>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* タブナビゲーション */}
       <div className="bg-white rounded-lg shadow-md mb-6">
         <div className="border-b border-gray-200">
@@ -358,12 +454,23 @@ export const ProfilePage: React.FC = () => {
                     <div key={event.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <Link
-                            to={`/events/${event.id}`}
-                            className="text-lg font-semibold text-blue-600 hover:text-blue-800"
-                          >
-                            {event.title}
-                          </Link>
+                          <div className="flex items-center space-x-2 mb-1">
+                            <Link
+                              to={`/events/${event.id}`}
+                              className="text-lg font-semibold text-blue-600 hover:text-blue-800"
+                            >
+                              {event.title}
+                            </Link>
+                            {event.is_public ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                🌐 公開
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                🔒 非公開
+                              </span>
+                            )}
+                          </div>
                           <p className="text-gray-600 mt-1">
                             {new Date(event.start_datetime).toLocaleDateString('ja-JP')}
                           </p>

@@ -14,6 +14,9 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { AuthPage } from './pages/AuthPage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { UserProfilePage } from './pages/UserProfilePage';
+import { UserFollowersPage } from './pages/UserFollowersPage';
+import { UserSearchPage } from './pages/UserSearchPage';
 import { TermsOfServicePage } from './pages/TermsOfServicePage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { ContactPage } from './pages/ContactPage';
@@ -97,6 +100,10 @@ function AppContent() {
           <Route path="/register" element={<PrivateRoute><EventRegistrationPage /></PrivateRoute>} />
           <Route path="/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+          <Route path="/users/search" element={<UserSearchPage />} />
+          <Route path="/users/:username" element={<UserProfilePage />} />
+          <Route path="/users/:username/followers" element={<UserFollowersPage />} />
+          <Route path="/users/:username/following" element={<UserFollowersPage />} />
           <Route path="/auth" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />

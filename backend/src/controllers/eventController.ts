@@ -23,6 +23,7 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
     
     const where: any = {
       is_active: true
+      // is_public: true // 一時的にコメントアウト
     };
 
     // 検索条件の準備
@@ -185,10 +186,18 @@ export const getEventById = async (req: Request, res: Response, next: NextFuncti
       }
     });
 
-    if (!event) {
-      console.log(`Event not found: ${id}`);
+    if (!event || !event.is_active) {
+      console.log(`Event not found or inactive: ${id}`);
       throw createError('Event not found', 404);
     }
+
+    // プライベートイベントの場合は作成者のみアクセス可能（一時的にコメントアウト）
+    // const user = (req as any).user;
+    // const eventWithPublic = event as any;
+    // if (!eventWithPublic.is_public && event.user_id !== user?.id) {
+    //   console.log(`Private event access denied: ${id}`);
+    //   throw createError('Event not found', 404);
+    // }
 
     console.log(`Event found: ${event.title}`);
     res.json(event);
@@ -354,6 +363,16 @@ export const getEventComments = async (req: Request, res: Response, next: NextFu
         where: { 
           event_id: Number(id),
           is_reported: false
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              display_name: true,
+              avatar_url: true
+            }
+          }
         },
         orderBy: { created_at: sortOrder },
         skip: offset,
