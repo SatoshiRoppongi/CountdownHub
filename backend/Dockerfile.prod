@@ -1,26 +1,46 @@
+# =============================================================================
+# CountdownHub バックエンド Dockerfile (本番環境)
+#
+# TypeScript をコンパイルし、本番用の Node.js アプリケーションとして実行する。
+# ベースイメージに Node.js 20 Alpine を使用し、軽量な本番イメージを構成。
+#
+# ビルドステップ:
+#   1. 本番依存関係のみインストール (npm ci --only=production)
+#   2. Prisma クライアントの生成 (npx prisma generate)
+#   3. TypeScript のコンパイル (npm run build → dist/ ディレクトリに出力)
+#
+# ヘルスチェック:
+#   /health エンドポイントに 30 秒間隔で HTTP リクエストを送信。
+#   3 回連続失敗でコンテナが unhealthy とマークされる。
+#   Render.com のヘルスチェック設定 (render.yaml) とも連携。
+#
+# 公開ポート: 3001 (Express API サーバー)
+# =============================================================================
+
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies
+# 本番依存関係のみインストール (devDependencies を除外して軽量化)
 COPY package*.json ./
 RUN npm ci --only=production
 
-# Copy source code
+# ソースコード全体をコピー (ビルドに必要)
 COPY . .
 
-# Generate Prisma client
+# Prisma クライアント生成 (データベースアクセスに必須)
 RUN npx prisma generate
 
-# Build TypeScript
+# TypeScript → JavaScript コンパイル (出力先: dist/)
 RUN npm run build
 
-# Expose port
+# Express API サーバーのポート
 EXPOSE 3001
 
-# Health check
+# コンテナヘルスチェック設定
+# 30 秒間隔、タイムアウト 3 秒、起動猶予 5 秒、3 回リトライ
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3001/health || exit 1
 
-# Start application
+# コンパイル済み JavaScript を直接実行 (nodemon なし)
 CMD ["node", "dist/index.js"]

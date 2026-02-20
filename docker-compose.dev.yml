@@ -1,4 +1,20 @@
+# =============================================================================
+# CountdownHub Docker Compose 構成 (開発専用)
+#
+# docker-compose.yml との違い:
+#   - コンテナ名に "-dev" サフィックスが付与される
+#   - node_modules を名前付きボリュームで管理 (ホスト側との競合を防止)
+#   - フロントエンドは .env.local を参照
+#   - PRISMA_CLI_BINARY_TARGETS 指定なし
+#
+# 起動: docker-compose -f docker-compose.dev.yml up -d
+# 停止: docker-compose -f docker-compose.dev.yml down
+# =============================================================================
+
 services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL データベース (開発用)
+  # ---------------------------------------------------------------------------
   db:
     image: postgres:15
     container_name: countdown-hub-db-dev
@@ -9,10 +25,15 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data_dev:/var/lib/postgresql/data
-      - ./backend/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data_dev:/var/lib/postgresql/data                       # 開発用データ永続化
+      - ./backend/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql   # 初期化 SQL
     restart: unless-stopped
 
+  # ---------------------------------------------------------------------------
+  # バックエンド API サーバー (開発用)
+  # node_modules は名前付きボリューム (backend_node_modules) で管理され、
+  # ホスト OS の node_modules との競合を防いでいる。
+  # ---------------------------------------------------------------------------
   backend:
     build:
       context: ./backend
@@ -27,34 +48,40 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./backend:/app
-      - backend_node_modules:/app/node_modules
+      - ./backend:/app                             # ソースコードのバインドマウント
+      - backend_node_modules:/app/node_modules     # 名前付きボリュームで隔離
     depends_on:
       - db
     restart: unless-stopped
     command: npm run dev
 
+  # ---------------------------------------------------------------------------
+  # フロントエンド開発サーバー (開発用)
+  # .env.local を参照し、ローカル開発用の環境変数を使用する。
+  # node_modules は名前付きボリュームで管理。
+  # ---------------------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: countdown-hub-frontend-dev
     env_file:
-      - ./frontend/.env.local
+      - ./frontend/.env.local                      # ローカル開発用環境変数
     environment:
       NODE_ENV: development
       REACT_APP_API_URL: http://localhost:3001
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
-      - frontend_node_modules:/app/node_modules
+      - ./frontend:/app                            # ソースコードのバインドマウント
+      - frontend_node_modules:/app/node_modules    # 名前付きボリュームで隔離
     depends_on:
       - backend
     restart: unless-stopped
     command: npm run dev
 
+# 名前付きボリューム定義
 volumes:
-  postgres_data_dev:
-  backend_node_modules:
-  frontend_node_modules:
+  postgres_data_dev:                               # 開発用 PostgreSQL データ永続化
+  backend_node_modules:                            # バックエンド依存パッケージ隔離
+  frontend_node_modules:                           # フロントエンド依存パッケージ隔離

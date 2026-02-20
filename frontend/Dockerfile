@@ -1,16 +1,32 @@
+# =============================================================================
+# CountdownHub フロントエンド Dockerfile (開発環境)
+#
+# React (Create React App) の開発サーバーをコンテナ内で起動する。
+# ベースイメージに Node.js 20 Alpine を使用し、軽量なイメージを構成。
+#
+# ビルドキャッシュの最適化:
+#   1. package*.json を先にコピーして npm install を実行
+#   2. ソースコードの変更時に依存関係の再インストールをスキップ
+#
+# docker-compose でバインドマウントされるため、ソースコードの変更は
+# コンテナ再ビルドなしにホットリロードで即座に反映される。
+#
+# 公開ポート: 3000 (React 開発サーバー)
+# =============================================================================
+
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies
+# 依存関係のインストール (キャッシュ効率のため先にコピー)
 COPY package*.json ./
 RUN npm install
 
-# Copy source code
+# ソースコードのコピー (開発時はバインドマウントで上書きされる)
 COPY . .
 
-# Expose port
+# React 開発サーバーのポート
 EXPOSE 3000
 
-# Start development server
+# 開発サーバー起動 (react-scripts start)
 CMD ["npm", "run", "dev"]

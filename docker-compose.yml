@@ -1,4 +1,25 @@
+# =============================================================================
+# CountdownHub Docker Compose 構成 (開発環境)
+#
+# 3 つのサービスでアプリケーション全体を構成する:
+#   db       - PostgreSQL 15 データベース
+#   backend  - Node.js + Express API サーバー (ポート 3001)
+#   frontend - React 開発サーバー (ポート 3000)
+#
+# 起動: docker-compose up -d
+# 停止: docker-compose down
+# ログ: docker-compose logs -f [サービス名]
+#
+# データベースの永続化には名前付きボリューム (postgres_data) を使用。
+# init.sql による初期データ投入にも対応している。
+# =============================================================================
+
 services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL データベース
+  # Prisma ORM 経由でバックエンドからアクセスされる。
+  # 初回起動時に init.sql が実行され、テーブルと初期データが作成される。
+  # ---------------------------------------------------------------------------
   db:
     image: postgres:15
     container_name: countdown-hub-db
@@ -9,17 +30,23 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data                           # データ永続化
+      - ./backend/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql   # 初期化 SQL
     restart: unless-stopped
 
+  # ---------------------------------------------------------------------------
+  # バックエンド API サーバー
+  # Express + TypeScript で構築。ホットリロード (nodemon) 対応。
+  # ソースコードはバインドマウントされ、コンテナ再ビルドなしで変更が反映される。
+  # node_modules は匿名ボリュームでホストと分離している。
+  # ---------------------------------------------------------------------------
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: countdown-hub-backend
     env_file:
-      - ./backend/.env
+      - ./backend/.env                     # API キー等の機密情報
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://countdown_user:countdown_pass@db:5432/countdown_hub
@@ -28,32 +55,38 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./backend:/app
-      - /app/node_modules
+      - ./backend:/app                     # ソースコードのバインドマウント
+      - /app/node_modules                  # node_modules をコンテナ内に隔離
     depends_on:
       - db
     restart: unless-stopped
     command: npm run dev
 
+  # ---------------------------------------------------------------------------
+  # フロントエンド開発サーバー
+  # React (Create React App) の開発サーバー。ホットリロード対応。
+  # バックエンドへの API リクエストは REACT_APP_API_URL で指定された URL に送信。
+  # ---------------------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: countdown-hub-frontend
     env_file:
-      - ./frontend/.env
+      - ./frontend/.env                    # Firebase 設定等
     environment:
       NODE_ENV: development
       REACT_APP_API_URL: http://localhost:3001
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./frontend:/app                    # ソースコードのバインドマウント
+      - /app/node_modules                  # node_modules をコンテナ内に隔離
     depends_on:
       - backend
     restart: unless-stopped
     command: npm run dev
 
+# 名前付きボリューム定義
 volumes:
-  postgres_data:
+  postgres_data:                           # PostgreSQL データ永続化用
